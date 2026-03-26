@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { signup } from '@/app/auth/actions'
+import { LoginButton } from '@/components/LoginButton'
 
 export default async function SignupPage({
   searchParams,
@@ -33,9 +34,7 @@ export default async function SignupPage({
           required
         />
         
-        <button className="bg-green-600 text-white rounded-md px-4 py-2 text-foreground mb-2">
-          Sign Up
-        </button>
+        <LoginButton text="Sign Up" colorClass="bg-green-600" />
         <p className="text-sm text-center">
           Already have an account?{' '}
           <Link href="/login" className="text-blue-600 hover:underline">

@@ -7,6 +7,7 @@ import { RealtimeChannel } from '@supabase/supabase-js'
 import MessageList from './MessageList'
 import MessageInput from './MessageInput'
 import { usePresence } from '@/lib/hooks/usePresence'
+import { TypingAnimation } from './TypingAnimation'
 
 export default function ChatBox({ 
   initialMessages, 
@@ -20,9 +21,9 @@ export default function ChatBox({
   // Memoize the supabase client so its reference never changes to prevent endless WebSocket resets
   const supabase = useMemo(() => createClient(), [])
   const [messages, setMessages] = useState<Message[]>(initialMessages)
+  const [typingUsers, setTypingUsers] = useState<string[]>([])
   const channelRef = useRef<RealtimeChannel | null>(null)
-  
-  const { onlineUsers, typingUsers, setTyping } = usePresence(roomId, currentUserId)
+  const { onlineUsers } = usePresence(roomId, currentUserId)
 
   useEffect(() => {
     // Subscribe to new messages via WebSocket Broadcast (bypassing the database trigger)
@@ -34,6 +35,19 @@ export default function ChatBox({
           // Prevent exact duplicate inserts
           if (prev.some(msg => msg.id === newMessage.id)) return prev
           return [...prev, newMessage]
+        })
+      })
+      .on('broadcast', { event: 'typing' }, (payload) => {
+        const { userId, isTyping } = payload.payload
+        if (userId === currentUserId) return
+        
+        setTypingUsers((prev) => {
+          if (isTyping) {
+            if (prev.includes(userId)) return prev
+            return [...prev, userId]
+          } else {
+            return prev.filter(id => id !== userId)
+          }
         })
       })
       .subscribe()
@@ -83,6 +97,16 @@ export default function ChatBox({
     }
   }
 
+  const handleTyping = (isTyping: boolean) => {
+    if (channelRef.current) {
+      channelRef.current.send({
+        type: 'broadcast',
+        event: 'typing',
+        payload: { userId: currentUserId, isTyping }
+      })
+    }
+  }
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden relative">
       <div className="absolute top-2 right-4 text-xs text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full z-10">
@@ -90,15 +114,11 @@ export default function ChatBox({
       </div>
       <MessageList messages={messages} currentUserId={currentUserId} />
       
-      <div className="px-6 py-2 h-6">
-        {typingUsers.length > 0 && (
-          <p className="text-xs text-neutral-500 italic">
-            Someone is typing...
-          </p>
-        )}
+      <div className="px-6 py-2 min-h-[40px] flex items-center">
+        {typingUsers.length > 0 && <TypingAnimation />}
       </div>
 
-      <MessageInput onSendMessage={handleSendMessage} onTyping={(isTyping: boolean) => setTyping(isTyping)} />
+      <MessageInput onSendMessage={handleSendMessage} onTyping={handleTyping} />
     </div>
   )
 }

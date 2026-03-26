@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { login } from '@/app/auth/actions'
+import { LoginButton } from '@/components/LoginButton'
 
 export default async function LoginPage({
   searchParams,
@@ -33,9 +34,7 @@ export default async function LoginPage({
           required
         />
         
-        <button className="bg-blue-600 text-white rounded-md px-4 py-2 text-foreground mb-2">
-          Sign In
-        </button>
+        <LoginButton text="Sign In" />
         
         <p className="text-sm text-center">
           Don't have an account?{' '}

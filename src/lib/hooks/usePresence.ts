@@ -11,7 +11,6 @@ interface PresenceState {
 
 export function usePresence(roomId: string, currentUserId: string) {
   const [onlineUsers, setOnlineUsers] = useState<string[]>([])
-  const [typingUsers, setTypingUsers] = useState<string[]>([])
   const [channel, setChannel] = useState<RealtimeChannel | null>(null)
 
   const supabase = useMemo(() => createClient(), [])
@@ -29,29 +28,23 @@ export function usePresence(roomId: string, currentUserId: string) {
       .on('presence', { event: 'sync' }, () => {
         const state = roomChannel.presenceState<PresenceState>()
         
-        const allOnlineIds: string[] = []
-        const currentlyTypingIds: string[] = []
+        const allOnlineIds = new Set<string>()
+        const currentlyTypingIds = new Set<string>()
         
         for (const [key, presences] of Object.entries(state)) {
-          // presences is an array of PresenceState for that particular key
-          const presence = presences[0]
-          
-          if (presence) {
-            allOnlineIds.push(presence.user_id)
-            if (presence.typing && presence.user_id !== currentUserId) {
-              currentlyTypingIds.push(presence.user_id)
+          presences.forEach((p: any) => {
+            if (p.user_id) {
+              allOnlineIds.add(p.user_id)
             }
-          }
+          })
         }
         
-        setOnlineUsers(allOnlineIds)
-        setTypingUsers(currentlyTypingIds)
+        setOnlineUsers(Array.from(allOnlineIds))
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           await roomChannel.track({
-            user_id: currentUserId,
-            typing: false,
+            user_id: currentUserId
           })
         }
       })
@@ -59,18 +52,10 @@ export function usePresence(roomId: string, currentUserId: string) {
     setChannel(roomChannel)
 
     return () => {
+      roomChannel.untrack()
       supabase.removeChannel(roomChannel)
     }
   }, [roomId, currentUserId, supabase])
 
-  const setTyping = async (isTyping: boolean) => {
-    if (channel) {
-      await channel.track({
-        user_id: currentUserId,
-        typing: isTyping,
-      })
-    }
-  }
-
-  return { onlineUsers, typingUsers, setTyping }
+  return { onlineUsers }
 }
