@@ -3,11 +3,20 @@
 import Link from 'next/link'
 import { useState, useRef } from 'react'
 import { createRoom } from '@/app/chat/actions'
-import { Room } from '@/types'
-import { PlusCircle, Search, LogOut } from 'lucide-react'
+import { Room, Profile } from '@/types'
+import { PlusCircle, Search, LogOut, Settings } from 'lucide-react'
 import { logout } from '@/app/auth/actions'
+import { Avatar } from './Avatar'
 
-export default function Sidebar({ rooms, userEmail }: { rooms: Room[], userEmail?: string }) {
+export default function Sidebar({ 
+  rooms, 
+  userEmail,
+  profile 
+}: { 
+  rooms: Room[], 
+  userEmail?: string,
+  profile?: Profile | null
+}) {
   const [isCreating, setIsCreating] = useState(false)
   const [roomName, setRoomName] = useState('')
   const [search, setSearch] = useState('')
@@ -95,11 +104,25 @@ export default function Sidebar({ rooms, userEmail }: { rooms: Room[], userEmail
         )}
       </div>
 
-      <div className="p-4 border-t dark:border-neutral-700 flex items-center justify-between">
-        <p className="text-sm max-w-[150px] truncate">{userEmail}</p>
-        <button onClick={() => logout()} className="text-neutral-500 hover:text-red-500">
-          <LogOut size={16} />
-        </button>
+      <div className="p-4 border-t dark:border-neutral-700 space-y-3">
+        <div className="flex items-center gap-3">
+          <Avatar url={profile?.avatar_url} name={profile?.username || userEmail} size="sm" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold truncate">{profile?.username || 'User'}</p>
+            <p className="text-[10px] text-neutral-500 truncate">{userEmail}</p>
+          </div>
+          <button onClick={() => logout()} className="text-neutral-500 hover:text-red-500 p-1" title="Logout">
+            <LogOut size={16} />
+          </button>
+        </div>
+        
+        <Link 
+          href="/profile" 
+          className="flex items-center gap-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
+        >
+          <Settings size={14} />
+          Edit Profile
+        </Link>
       </div>
     </div>
   )

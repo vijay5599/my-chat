@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import { Message } from '@/types'
 import { format } from 'date-fns'
 import clsx from 'clsx'
+import { Avatar } from './Avatar'
 
 export default function MessageList({ messages, currentUserId }: { messages: Message[], currentUserId: string }) {
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -24,29 +25,38 @@ export default function MessageList({ messages, currentUserId }: { messages: Mes
           return (
             <div
               key={msg.id}
-              className={clsx('flex flex-col', isMe ? 'items-end' : 'items-start')}
+              className={clsx('flex gap-3', isMe ? 'flex-row-reverse' : 'flex-row')}
             >
-              <div 
-                className={clsx(
-                  'max-w-[75%] rounded-2xl px-4 py-2 text-sm',
-                  isMe 
-                    ? 'bg-blue-600 text-white rounded-br-sm' 
-                    : 'bg-neutral-200 dark:bg-neutral-800 text-foreground rounded-bl-sm'
-                )}
+              <Avatar 
+                url={msg.profiles?.avatar_url} 
+                name={msg.profiles?.username || 'User'} 
+                size="sm" 
+              />
+              <div
+                className={clsx('flex flex-col', isMe ? 'items-end' : 'items-start')}
               >
-                {!isMe && (
-                  <p className="text-[10px] font-medium text-neutral-500 mb-1">
-                    User: {msg.user_id.slice(0, 5)}...
-                  </p>
-                )}
-                <p>{msg.content}</p>
                 <div 
                   className={clsx(
-                    'text-[10px] mt-1 text-right',
-                    isMe ? 'text-blue-200' : 'text-neutral-400'
+                    'max-w-[85%] rounded-2xl px-4 py-2 text-sm relative',
+                    isMe 
+                      ? 'bg-blue-600 text-white rounded-tr-none' 
+                      : 'bg-neutral-200 dark:bg-neutral-800 text-foreground rounded-tl-none'
                   )}
                 >
-                  {format(new Date(msg.created_at), 'h:mm a')}
+                  {!isMe && (
+                    <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 mb-1 uppercase tracking-tight">
+                      {msg.profiles?.username || 'User'}
+                    </p>
+                  )}
+                  <p className="break-words leading-relaxed">{msg.content}</p>
+                  <div 
+                    className={clsx(
+                      'text-[9px] mt-1.5 opacity-70 text-right font-medium',
+                      isMe ? 'text-blue-100' : 'text-neutral-500'
+                    )}
+                  >
+                    {format(new Date(msg.created_at), 'h:mm a')}
+                  </div>
                 </div>
               </div>
             </div>

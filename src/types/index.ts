@@ -3,6 +3,13 @@ export interface User {
   email: string
 }
 
+export interface Profile {
+  id: string
+  username: string
+  avatar_url: string | null
+  updated_at: string
+}
+
 export interface Room {
   id: string
   name: string
@@ -15,9 +22,7 @@ export interface Message {
   user_id: string
   content: string
   created_at: string
-  users?: {
-    email: string
-  } // usually Supabase can join on the auth.users or a profiles table, but auth.users might not be directly joinable depending on setup. Let's assume we can't join auth.users directly without a view.
+  profiles?: Profile
 }
 
 export interface RoomMember {

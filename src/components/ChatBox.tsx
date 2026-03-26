@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Message } from '@/types'
+import { Message, Profile } from '@/types'
 import { RealtimeChannel } from '@supabase/supabase-js'
 import MessageList from './MessageList'
 import MessageInput from './MessageInput'
@@ -21,11 +21,23 @@ export default function ChatBox({
   // Memoize the supabase client so its reference never changes to prevent endless WebSocket resets
   const supabase = useMemo(() => createClient(), [])
   const [messages, setMessages] = useState<Message[]>(initialMessages)
+  const [userProfile, setUserProfile] = useState<Profile | null>(null)
   const [typingUsers, setTypingUsers] = useState<string[]>([])
   const channelRef = useRef<RealtimeChannel | null>(null)
   const { onlineUsers } = usePresence(roomId, currentUserId)
 
   useEffect(() => {
+    // Fetch current user profile
+    const fetchProfile = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', currentUserId)
+        .single()
+      if (data) setUserProfile(data)
+    }
+    fetchProfile()
+
     // Subscribe to new messages via WebSocket Broadcast (bypassing the database trigger)
     const channel = supabase
       .channel(`realtime:messages:${roomId}`)
@@ -69,7 +81,8 @@ export default function ChatBox({
       room_id: roomId,
       user_id: currentUserId,
       content,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      profiles: userProfile || undefined
     }
 
     // Instantly show on UI

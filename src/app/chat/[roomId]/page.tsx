@@ -15,10 +15,10 @@ export default async function RoomPage({ params }: { params: Promise<{ roomId: s
   // Attempt to join the room
   await joinRoom(resolvedParams.roomId)
 
-  // Fetch initial messages
+  // Fetch initial messages with profiles
   const { data: messages } = await supabase
     .from('messages')
-    .select('*')
+    .select('*, profiles(*)')
     .eq('room_id', resolvedParams.roomId)
     .order('created_at', { ascending: true })
 
