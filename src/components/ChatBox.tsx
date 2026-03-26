@@ -88,7 +88,9 @@ export default function ChatBox({
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [roomId, supabase])
+  }, [roomId, supabase, currentUserId])
+
+  const [errorStatus, setErrorStatus] = useState<string | null>(null)
 
   const handleSendMessage = async (content: string) => {
     if (!content.trim()) return
@@ -124,6 +126,8 @@ export default function ChatBox({
 
     if (error) {
       console.error('Error sending message:', error)
+      setErrorStatus(`Failed to save message: ${error.message}`)
+      setTimeout(() => setErrorStatus(null), 5000)
       // Rollback on failure
       setMessages((prev) => prev.filter(msg => msg.id !== optimisticId))
     }
@@ -154,6 +158,13 @@ export default function ChatBox({
   return (
     <div className="flex-1 flex flex-col overflow-hidden relative">
       <ChatHeader room={room} onlineCount={onlineUsers.length} />
+      
+      {errorStatus && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 bg-red-100 text-red-700 px-4 py-2 rounded-lg shadow-lg border border-red-200 text-sm animate-in fade-in slide-in-from-top-4 duration-300">
+          {errorStatus}
+        </div>
+      )}
+
       <div className="flex-1 overflow-hidden flex flex-col relative">
         <MessageList messages={messages} currentUserId={currentUserId} />
 
