@@ -7,6 +7,8 @@ import { Room, Profile } from '@/types'
 import { PlusCircle, Search, LogOut, Settings } from 'lucide-react'
 import { logout } from '@/app/auth/actions'
 import { Avatar } from './Avatar'
+import { useNav } from './NavigationWrapper'
+import { X, PanelLeftClose } from 'lucide-react'
 
 export default function Sidebar({ 
   rooms, 
@@ -17,6 +19,7 @@ export default function Sidebar({
   userEmail?: string,
   profile?: Profile | null
 }) {
+  const { setIsSidebarOpen, isMobile } = useNav()
   const [isCreating, setIsCreating] = useState(false)
   const [roomName, setRoomName] = useState('')
   const [search, setSearch] = useState('')
@@ -34,12 +37,30 @@ export default function Sidebar({
   const filteredRooms = rooms.filter(r => r.name.toLowerCase().includes(search.toLowerCase()))
 
   return (
-    <div className="w-72 bg-neutral-100 dark:bg-neutral-800 border-r dark:border-neutral-700 flex flex-col h-full">
-      <div className="p-4 border-b dark:border-neutral-700 flex items-center justify-between">
+    <div className="w-full bg-neutral-100 dark:bg-neutral-800 border-r dark:border-neutral-700 flex flex-col h-full">
+      <div className="p-4 border-b dark:border-neutral-700 flex items-center justify-between bg-neutral-100/50 dark:bg-neutral-800/50">
         <h2 className="font-semibold text-lg">Chats</h2>
-        <button onClick={() => setIsCreating(true)} className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md">
-          <PlusCircle size={20} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button onClick={() => setIsCreating(true)} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors" title="Create Room">
+            <PlusCircle size={18} />
+          </button>
+          {!isMobile ? (
+            <button 
+              onClick={() => setIsSidebarOpen(false)} 
+              className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+              title="Collapse Sidebar"
+            >
+              <PanelLeftClose size={18} />
+            </button>
+          ) : (
+            <button 
+              onClick={() => setIsSidebarOpen(false)} 
+              className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors"
+            >
+              <X size={20} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="p-4 border-b dark:border-neutral-700">
@@ -93,6 +114,7 @@ export default function Sidebar({
               <li key={room.id}>
                 <Link
                   href={`/chat/${room.id}`}
+                  onClick={() => isMobile && setIsSidebarOpen(false)}
                   className="block px-3 py-2 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 transition"
                 >
                   <p className="font-medium truncate">{room.name}</p>

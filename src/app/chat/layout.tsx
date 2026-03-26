@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/Sidebar'
+import NavigationWrapper from '@/components/NavigationWrapper'
 import { redirect } from 'next/navigation'
 
 export default async function ChatLayout({
@@ -28,11 +29,10 @@ export default async function ChatLayout({
     .single()
 
   return (
-    <div className="flex h-screen bg-neutral-50 dark:bg-neutral-900 text-foreground overflow-hidden">
-      <Sidebar rooms={rooms || []} userEmail={user.email} profile={profile} />
-      <main className="flex-1 flex flex-col h-full bg-white dark:bg-black shadow-sm z-10">
-        {children}
-      </main>
-    </div>
+    <NavigationWrapper 
+      sidebar={<Sidebar rooms={rooms || []} userEmail={user.email} profile={profile} />}
+    >
+      {children}
+    </NavigationWrapper>
   )
 }

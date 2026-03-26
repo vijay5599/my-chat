@@ -34,12 +34,13 @@ export default async function RoomPage({ params }: { params: Promise<{ roomId: s
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-white dark:bg-black">
-      <div className="border-b px-6 py-4 flex items-center justify-between shadow-sm">
-        <h2 className="font-semibold text-xl">{room.name}</h2>
-        <p className="text-xs text-neutral-500">Room ID: {room.id}</p>
-      </div>
-      <ChatBox initialMessages={messages || []} roomId={resolvedParams.roomId} currentUserId={user.id} />
+    <div className="flex-1 flex flex-col h-full bg-white dark:bg-black overflow-hidden relative">
+      <ChatBox 
+        initialMessages={messages || []} 
+        roomId={resolvedParams.roomId} 
+        currentUserId={user.id}
+        room={room}
+      />
     </div>
   )
 }

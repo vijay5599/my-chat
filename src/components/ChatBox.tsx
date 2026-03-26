@@ -8,21 +8,32 @@ import MessageList from './MessageList'
 import MessageInput from './MessageInput'
 import { usePresence } from '@/lib/hooks/usePresence'
 import { TypingAnimation } from './TypingAnimation'
+import { useNav } from './NavigationWrapper'
+// import { Menu } from 'lucide-react'
+// import { ReplyChips } from './ReplyChips'
+// import { generateSuggestions } from '@/app/chat/ai-actions'
+import ChatHeader from './ChatHeader'
+import { Room } from '@/types'
 
-export default function ChatBox({ 
-  initialMessages, 
-  roomId, 
-  currentUserId 
-}: { 
-  initialMessages: Message[], 
-  roomId: string, 
-  currentUserId: string 
+export default function ChatBox({
+  initialMessages,
+  roomId,
+  currentUserId,
+  room
+}: {
+  initialMessages: Message[],
+  roomId: string,
+  currentUserId: string,
+  room: Room
 }) {
+  const { setIsSidebarOpen, isMobile } = useNav()
   // Memoize the supabase client so its reference never changes to prevent endless WebSocket resets
   const supabase = useMemo(() => createClient(), [])
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [userProfile, setUserProfile] = useState<Profile | null>(null)
   const [typingUsers, setTypingUsers] = useState<string[]>([])
+  const [suggestions, setSuggestions] = useState<string[]>([])
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false)
   const channelRef = useRef<RealtimeChannel | null>(null)
   const { onlineUsers } = usePresence(roomId, currentUserId)
 
@@ -46,13 +57,21 @@ export default function ChatBox({
         setMessages((prev) => {
           // Prevent exact duplicate inserts
           if (prev.some(msg => msg.id === newMessage.id)) return prev
-          return [...prev, newMessage]
+
+          const newMessages = [...prev, newMessage]
+
+          // Trigger AI suggestions if the message is from someone else
+          // if (newMessage.user_id !== currentUserId) {
+          //   triggerAiSuggestions(newMessages)
+          // }
+
+          return newMessages
         })
       })
       .on('broadcast', { event: 'typing' }, (payload) => {
         const { userId, isTyping } = payload.payload
         if (userId === currentUserId) return
-        
+
         setTypingUsers((prev) => {
           if (isTyping) {
             if (prev.includes(userId)) return prev
@@ -110,6 +129,18 @@ export default function ChatBox({
     }
   }
 
+  // const triggerAiSuggestions = async (currentMessages: Message[]) => {
+  //   setSuggestionsLoading(true)
+  //   const newSuggestions = await generateSuggestions(currentMessages)
+  //   setSuggestions(newSuggestions)
+  //   setSuggestionsLoading(false)
+  // }
+
+  const handleSelectSuggestion = (suggestion: string) => {
+    setSuggestions([]) // Clear after selection
+    handleSendMessage(suggestion)
+  }
+
   const handleTyping = (isTyping: boolean) => {
     if (channelRef.current) {
       channelRef.current.send({
@@ -122,13 +153,20 @@ export default function ChatBox({
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden relative">
-      <div className="absolute top-2 right-4 text-xs text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full z-10">
-        {onlineUsers.length} online
-      </div>
-      <MessageList messages={messages} currentUserId={currentUserId} />
-      
-      <div className="px-6 py-2 min-h-[40px] flex items-center">
-        {typingUsers.length > 0 && <TypingAnimation />}
+      <ChatHeader room={room} onlineCount={onlineUsers.length} />
+      <div className="flex-1 overflow-hidden flex flex-col relative">
+        <MessageList messages={messages} currentUserId={currentUserId} />
+
+        <div className="px-6 py-2 min-h-[40px] flex items-center justify-between">
+          <div className="flex-1">
+            {typingUsers.length > 0 && <TypingAnimation />}
+          </div>
+          {/* <ReplyChips
+            suggestions={suggestions}
+            onSelect={handleSelectSuggestion}
+            loading={suggestionsLoading}
+          /> */}
+        </div>
       </div>
 
       <MessageInput onSendMessage={handleSendMessage} onTyping={handleTyping} />
