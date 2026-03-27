@@ -92,8 +92,8 @@ export default function ChatBox({
 
   const [errorStatus, setErrorStatus] = useState<string | null>(null)
 
-  const handleSendMessage = async (content: string) => {
-    if (!content.trim()) return
+  const handleSendMessage = async (content: string, audioBlob?: Blob) => {
+    if (!content.trim() && !audioBlob) return
 
     // Pre-generate a UUID so the Realtime event has the exact same ID, preventing duplicates
     const optimisticId = crypto.randomUUID()
@@ -102,26 +102,64 @@ export default function ChatBox({
       room_id: roomId,
       user_id: currentUserId,
       content,
+      audio_url: audioBlob ? URL.createObjectURL(audioBlob) : undefined,
       created_at: new Date().toISOString(),
       profiles: userProfile || undefined
     }
 
-    // Instantly show on UI
+    // Instantly show on UI for the sender (optimistic)
     setMessages((prev) => [...prev, optimisticMessage])
 
-    // Broadcast message to all peers instantly
+    let audioUrl = null
+    if (audioBlob) {
+      const fileName = `${currentUserId}/${optimisticId}.webm`
+      const { data: uploadData, error: uploadError } = await supabase
+        .storage
+        .from('voice-messages')
+        .upload(fileName, audioBlob)
+
+      if (uploadError) {
+        console.error('Error uploading voice message:', uploadError)
+        setErrorStatus(`Failed to upload voice message: ${uploadError.message}`)
+        setTimeout(() => setErrorStatus(null), 5000)
+        setMessages((prev) => prev.filter(msg => msg.id !== optimisticId))
+        return
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase
+        .storage
+        .from('voice-messages')
+        .getPublicUrl(fileName)
+      
+      audioUrl = publicUrl
+    }
+
+    // Prepare the message for broadcast and database
+    const finalMessage = { 
+      ...optimisticMessage,
+      audio_url: audioUrl || optimisticMessage.audio_url 
+    }
+
+    // Broadcast message to all peers with the real URL (or optimistic content)
     if (channelRef.current) {
       await channelRef.current.send({
         type: 'broadcast',
         event: 'new_message',
-        payload: optimisticMessage
+        payload: finalMessage
       })
     }
 
     const { error } = await supabase
       .from('messages')
       .insert([
-        { id: optimisticId, room_id: roomId, user_id: currentUserId, content }
+        { 
+          id: optimisticId, 
+          room_id: roomId, 
+          user_id: currentUserId, 
+          content, 
+          audio_url: audioUrl 
+        }
       ])
 
     if (error) {

@@ -5,6 +5,7 @@ import { Message } from '@/types'
 import { format } from 'date-fns'
 import clsx from 'clsx'
 import { Avatar } from './Avatar'
+import { Mic } from 'lucide-react'
 
 export default function MessageList({ messages, currentUserId }: { messages: Message[], currentUserId: string }) {
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -27,19 +28,19 @@ export default function MessageList({ messages, currentUserId }: { messages: Mes
               key={msg.id}
               className={clsx('flex gap-3', isMe ? 'flex-row-reverse' : 'flex-row')}
             >
-              <Avatar 
-                url={msg.profiles?.avatar_url} 
-                name={msg.profiles?.username || 'User'} 
-                size="sm" 
+              <Avatar
+                url={msg.profiles?.avatar_url}
+                name={msg.profiles?.username || 'User'}
+                size="sm"
               />
               <div
                 className={clsx('flex flex-col', isMe ? 'items-end' : 'items-start')}
               >
-                <div 
+                <div
                   className={clsx(
                     'max-w-[85%] rounded-2xl px-4 py-2 text-sm relative',
-                    isMe 
-                      ? 'bg-blue-600 text-white rounded-tr-none' 
+                    isMe
+                      ? 'bg-blue-600 text-white rounded-tr-none'
                       : 'bg-neutral-200 dark:bg-neutral-800 text-foreground rounded-tl-none'
                   )}
                 >
@@ -48,8 +49,31 @@ export default function MessageList({ messages, currentUserId }: { messages: Mes
                       {msg.profiles?.username || 'User'}
                     </p>
                   )}
-                  <p className="break-words leading-relaxed">{msg.content}</p>
-                  <div 
+                  {msg.audio_url && (
+                    <div className={clsx(
+                      'mb-2 rounded-xl p-3 flex flex-col gap-2',
+                      isMe ? 'bg-blue-500/30' : 'bg-neutral-300 dark:bg-neutral-700'
+                    )}>
+                      <div className="flex items-center gap-2">
+                        <div className={clsx(
+                          'p-2 rounded-full',
+                          isMe ? 'bg-blue-400/30' : 'bg-neutral-400/30'
+                        )}>
+                          <Mic size={16} className={isMe ? 'text-blue-100' : 'text-neutral-600 dark:text-neutral-300'} />
+                        </div>
+                        <span className="text-[10px] uppercase font-bold tracking-wider opacity-70">
+                          Voice Message
+                        </span>
+                      </div>
+                      <audio
+                        src={msg.audio_url}
+                        controls
+                        className="w-[280px] sm:w-[320px] max-w-full outline-none"
+                      />
+                    </div>
+                  )}
+                  {msg.content && <p className="break-words leading-relaxed">{msg.content}</p>}
+                  <div
                     className={clsx(
                       'text-[9px] mt-1.5 opacity-70 text-right font-medium',
                       isMe ? 'text-blue-100' : 'text-neutral-500'
