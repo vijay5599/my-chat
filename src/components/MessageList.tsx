@@ -5,9 +5,17 @@ import { Message } from '@/types'
 import { format } from 'date-fns'
 import clsx from 'clsx'
 import { Avatar } from './Avatar'
-import { Mic } from 'lucide-react'
+import { Mic, Trash2 } from 'lucide-react'
 
-export default function MessageList({ messages, currentUserId }: { messages: Message[], currentUserId: string }) {
+export default function MessageList({ 
+  messages, 
+  currentUserId,
+  onDeleteMessage
+}: { 
+  messages: Message[], 
+  currentUserId: string,
+  onDeleteMessage: (id: string, audioUrl?: string) => void
+}) {
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -26,7 +34,7 @@ export default function MessageList({ messages, currentUserId }: { messages: Mes
           return (
             <div
               key={msg.id}
-              className={clsx('flex gap-3', isMe ? 'flex-row-reverse' : 'flex-row')}
+              className={clsx('flex gap-3 group', isMe ? 'flex-row-reverse' : 'flex-row')}
             >
               <Avatar
                 url={msg.profiles?.avatar_url}
@@ -44,6 +52,15 @@ export default function MessageList({ messages, currentUserId }: { messages: Mes
                       : 'bg-neutral-200 dark:bg-neutral-800 text-foreground rounded-tl-none'
                   )}
                 >
+                  {isMe && (
+                    <button
+                      onClick={() => onDeleteMessage(msg.id, msg.audio_url)}
+                      className="absolute -left-8 top-1/2 -translate-y-1/2 p-1.5 text-neutral-400 hover:text-red-500 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-full opacity-0 group-hover:opacity-100 transition-all"
+                      title="Delete message"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                   {!isMe && (
                     <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 mb-1 uppercase tracking-tight">
                       {msg.profiles?.username || 'User'}

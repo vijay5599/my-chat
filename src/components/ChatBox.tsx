@@ -57,16 +57,12 @@ export default function ChatBox({
         setMessages((prev) => {
           // Prevent exact duplicate inserts
           if (prev.some(msg => msg.id === newMessage.id)) return prev
-
-          const newMessages = [...prev, newMessage]
-
-          // Trigger AI suggestions if the message is from someone else
-          // if (newMessage.user_id !== currentUserId) {
-          //   triggerAiSuggestions(newMessages)
-          // }
-
-          return newMessages
+          return [...prev, newMessage]
         })
+      })
+      .on('broadcast', { event: 'delete_message' }, (payload) => {
+        const { messageId } = payload.payload
+        setMessages((prev) => prev.filter(msg => msg.id !== messageId))
       })
       .on('broadcast', { event: 'typing' }, (payload) => {
         const { userId, isTyping } = payload.payload
@@ -171,6 +167,52 @@ export default function ChatBox({
     }
   }
 
+  const handleDeleteMessage = async (messageId: string, audioUrl?: string) => {
+    // 1. Instantly update UI (optimistic)
+    setMessages((prev) => prev.filter(msg => msg.id !== messageId))
+
+    // 2. Broadcast deletion
+    if (channelRef.current) {
+      await channelRef.current.send({
+        type: 'broadcast',
+        event: 'delete_message',
+        payload: { messageId }
+      })
+    }
+
+    // 3. Delete from DB
+    const { error: dbError } = await supabase
+      .from('messages')
+      .delete()
+      .eq('id', messageId)
+
+    if (dbError) {
+      console.error('Error deleting message:', dbError)
+      setErrorStatus(`Failed to delete message: ${dbError.message}`)
+      setTimeout(() => setErrorStatus(null), 5000)
+      // Note: Re-fetching might be better than manual rollback for safety
+      return
+    }
+
+    // 4. Cleanup Storage
+    if (audioUrl) {
+      // Extract file path from URL
+      // http://.../storage/v1/object/public/voice-messages/USER_ID/MESSAGE_ID.webm
+      const pathParts = audioUrl.split('voice-messages/')
+      if (pathParts.length > 1) {
+        const filePath = pathParts[1]
+        const { error: storageError } = await supabase
+          .storage
+          .from('voice-messages')
+          .remove([filePath])
+        
+        if (storageError) {
+          console.error('Error deleting audio file:', storageError)
+        }
+      }
+    }
+  }
+
   // const triggerAiSuggestions = async (currentMessages: Message[]) => {
   //   setSuggestionsLoading(true)
   //   const newSuggestions = await generateSuggestions(currentMessages)
@@ -204,7 +246,11 @@ export default function ChatBox({
       )}
 
       <div className="flex-1 overflow-hidden flex flex-col relative">
-        <MessageList messages={messages} currentUserId={currentUserId} />
+        <MessageList 
+          messages={messages} 
+          currentUserId={currentUserId} 
+          onDeleteMessage={handleDeleteMessage}
+        />
 
         <div className="px-6 py-2 min-h-[40px] flex items-center justify-between">
           <div className="flex-1">
