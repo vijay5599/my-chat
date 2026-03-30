@@ -46,10 +46,10 @@ export default function MessageList({
     const mentionRegex = /@(\w+)/g
     const parts = content.split(mentionRegex)
     
-    if (parts.length === 1) return <p className="break-all leading-relaxed">{content}</p>
+    if (parts.length === 1) return <p className="break-words leading-relaxed text-sm">{content}</p>
 
     return (
-      <p className="break-all leading-relaxed">
+      <p className="break-words leading-relaxed text-sm">
         {parts.map((part, i) => {
           // Every odd part is a captured username from the regex
           if (i % 2 === 1) {

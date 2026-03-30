@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Mic, Eye, EyeOff } from 'lucide-react'
+import { Mic, Eye, EyeOff, Smile, Send } from 'lucide-react'
+import EmojiPicker from './EmojiPicker'
 import { Profile } from '@/types'
 import { Avatar } from './Avatar'
 import VoiceRecorder from './VoiceRecorder'
@@ -23,8 +24,10 @@ export default function MessageInput({
   const [isViewOnce, setIsViewOnce] = useState(false)
   const [mentionSearch, setMentionSearch] = useState<string | null>(null)
   const [cursorPosition, setCursorPosition] = useState(0)
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const emojiPickerRef = useRef<HTMLDivElement>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
@@ -139,7 +142,41 @@ export default function MessageInput({
         </div>
       ) : (
         <div className="flex flex-col gap-2">
+          {isEmojiPickerOpen && (
+            <div ref={emojiPickerRef}>
+              <EmojiPicker 
+                onSelect={(emoji) => {
+                  const start = inputRef.current?.selectionStart || content.length
+                  const end = inputRef.current?.selectionEnd || content.length
+                  const newContent = content.substring(0, start) + emoji + content.substring(end)
+                  setContent(newContent)
+                  
+                  // Focus back on input and move cursor
+                  setTimeout(() => {
+                    inputRef.current?.focus()
+                    const newPos = start + emoji.length
+                    inputRef.current?.setSelectionRange(newPos, newPos)
+                  }, 0)
+                }} 
+                onClose={() => setIsEmojiPickerOpen(false)} 
+              />
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="flex gap-2 items-center">
+            <button
+                type="button"
+                onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
+                className={clsx(
+                "p-2 rounded-full transition-all duration-200",
+                isEmojiPickerOpen 
+                    ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400" 
+                    : "text-neutral-500 hover:text-blue-600 hover:bg-neutral-100 dark:hover:bg-neutral-900"
+                )}
+                title="Emojis"
+            >
+                <Smile size={20} />
+            </button>
+
             <button
               type="button"
               onClick={() => setIsVoiceRecording(true)}
@@ -180,11 +217,11 @@ export default function MessageInput({
               type="submit" 
               disabled={!content.trim()}
               className={clsx(
-                "px-4 py-2 rounded-full text-sm font-medium disabled:opacity-50 transition-colors shadow-sm",
+                "p-2.5 rounded-full text-sm font-medium disabled:opacity-50 transition-all shadow-sm active:scale-95",
                 isViewOnce ? "bg-amber-600 hover:bg-amber-700 text-white" : "bg-blue-600 hover:bg-blue-700 text-white"
               )}
             >
-              Send
+              <Send size={18} />
             </button>
           </form>
           {isViewOnce && (
