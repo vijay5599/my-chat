@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useState, useRef } from 'react'
 import { createRoom, deleteRoom } from '@/app/chat/actions'
 import { Room, Profile } from '@/types'
-import { PlusCircle, Search, LogOut, Settings, Trash2 } from 'lucide-react'
+import { PlusCircle, Search, LogOut, Settings, Trash2, Lock, Clock } from 'lucide-react'
 import { logout } from '@/app/auth/actions'
 import { Avatar } from './Avatar'
 import { useNav } from './NavigationWrapper'
@@ -15,11 +15,15 @@ import clsx from 'clsx'
 export default function Sidebar({ 
   rooms, 
   userEmail,
-  profile 
+  profile,
+  joinedRoomIds = [],
+  joinRequests = []
 }: { 
   rooms: Room[], 
   userEmail?: string,
-  profile?: Profile | null
+  profile?: Profile | null,
+  joinedRoomIds?: string[],
+  joinRequests?: { room_id: string, status: string }[]
 }) {
   const pathname = usePathname()
   const router = useRouter()
@@ -135,11 +139,14 @@ export default function Sidebar({
           <p className="text-sm text-neutral-500 text-center py-4">No rooms found</p>
         ) : (
           <ul className="space-y-1">
-            {filteredRooms.map(room => {
-              const isActive = pathname === `/chat/${room.id}`
-              // Fallback: If no owner is assigned yet, allow current user to delete if they are likely the owner 
-              // or just show it so they can clean up existing rooms.
-              const isOwner = room.owner_id === profile?.id || !room.owner_id
+              {filteredRooms.map(room => {
+                const isActive = pathname === `/chat/${room.id}`
+                const isJoined = joinedRoomIds.includes(room.id)
+                const isPending = joinRequests.some(req => req.room_id === room.id && req.status === 'pending')
+                
+                // Fallback: If no owner is assigned yet, allow current user to delete if they are likely the owner 
+                // or just show it so they can clean up existing rooms.
+                const isOwner = room.owner_id === profile?.id || !room.owner_id
 
               return (
                 <li key={room.id} className="group/item relative">
@@ -154,14 +161,23 @@ export default function Sidebar({
                       }
                     }}
                     className={clsx(
-                      "block px-3 py-2 rounded-md transition duration-200 pr-10",
+                      "flex items-center px-3 py-2 rounded-md transition duration-200 pr-10",
                       isActive 
                         ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 ring-1 ring-blue-500/20" 
                         : "hover:bg-neutral-200 dark:hover:bg-neutral-700"
                     )}
                   >
-                    <p className="font-medium truncate">{room.name}</p>
-                    <p className="text-xs text-neutral-500">{new Date(room.created_at).toLocaleDateString('en-US')}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate flex items-center gap-1.5">
+                        {!isJoined && (
+                          isPending 
+                            ? <Clock size={12} className="text-yellow-500" />
+                            : <Lock size={12} className="text-neutral-400" />
+                        )}
+                        {room.name}
+                      </p>
+                      <p className="text-xs text-neutral-500">{new Date(room.created_at).toLocaleDateString('en-US')}</p>
+                    </div>
                   </Link>
 
                   {isOwner && (

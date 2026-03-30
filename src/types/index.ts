@@ -13,7 +13,7 @@ export interface Profile {
 export interface Room {
   id: string
   name: string
-  owner_id?: string
+  owner_id: string
   created_at: string
 }
 
@@ -33,4 +33,13 @@ export interface RoomMember {
   id: string
   room_id: string
   user_id: string
+}
+
+export interface RoomJoinRequest {
+  id: string
+  room_id: string
+  user_id: string
+  status: 'pending' | 'approved' | 'rejected'
+  created_at: string
+  profiles?: Profile
 }

@@ -15,11 +15,27 @@ export default async function ChatLayout({
     redirect('/login')
   }
 
-  // Fetch rooms
-  const { data: rooms } = await supabase
+  // Fetch rooms (all rooms for sidebar browsing)
+  const { data: allRooms } = await supabase
     .from('rooms')
     .select('*')
     .order('created_at', { ascending: false })
+
+  // Fetch current user memberships
+  const { data: userMemberships } = await supabase
+    .from('room_members')
+    .select('room_id')
+    .eq('user_id', user.id)
+
+  const joinedRoomIds = userMemberships?.map(m => m.room_id) || []
+
+  // Fetch current user's join requests
+  const { data: userRequests } = await supabase
+    .from('room_join_requests')
+    .select('room_id, status')
+    .eq('user_id', user.id)
+
+  const joinRequests = userRequests || []
 
   // Fetch current user profile
   const { data: profile } = await supabase
@@ -30,7 +46,15 @@ export default async function ChatLayout({
 
   return (
     <NavigationWrapper 
-      sidebar={<Sidebar rooms={rooms || []} userEmail={user.email} profile={profile} />}
+      sidebar={
+        <Sidebar 
+          rooms={allRooms || []} 
+          joinedRoomIds={joinedRoomIds} 
+          joinRequests={joinRequests}
+          userEmail={user.email} 
+          profile={profile} 
+        />
+      }
     >
       {children}
     </NavigationWrapper>

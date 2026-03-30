@@ -14,6 +14,7 @@ import { useNav } from './NavigationWrapper'
 // import { generateSuggestions } from '@/app/chat/ai-actions'
 import ChatHeader from './ChatHeader'
 import { Room } from '@/types'
+import JoinRequestsManager from './JoinRequestsManager'
 
 export default function ChatBox({
   initialMessages,
@@ -37,7 +38,43 @@ export default function ChatBox({
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
   const channelRef = useRef<RealtimeChannel | null>(null)
+  const [isManagingRequests, setIsManagingRequests] = useState(false)
+  const [pendingCount, setPendingCount] = useState(0)
   const { onlineUsers } = usePresence(roomId, currentUserId)
+
+  // Fetch pending requests count if owner
+  useEffect(() => {
+    if (room.owner_id !== currentUserId) return
+
+    const fetchPendingCount = async () => {
+      const { count } = await supabase
+        .from('room_join_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('room_id', roomId)
+        .eq('status', 'pending')
+      
+      setPendingCount(count || 0)
+    }
+
+    fetchPendingCount()
+
+    // Subscribe to join request changes
+    const requestChannel = supabase
+      .channel(`room_requests:${roomId}`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'room_join_requests',
+        filter: `room_id=eq.${roomId}`
+      }, () => {
+        fetchPendingCount()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(requestChannel)
+    }
+  }, [roomId, currentUserId, room.owner_id, supabase])
 
   useEffect(() => {
     // Fetch current user profile
@@ -276,7 +313,20 @@ export default function ChatBox({
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden relative">
-      <ChatHeader room={room} onlineCount={onlineUsers.length} />
+      <ChatHeader 
+        room={room} 
+        onlineCount={onlineUsers.length} 
+        isOwner={room.owner_id === currentUserId}
+        onManageRequests={() => setIsManagingRequests(true)}
+        pendingCount={pendingCount}
+      />
+      
+      {isManagingRequests && (
+        <JoinRequestsManager 
+          roomId={roomId} 
+          onClose={() => setIsManagingRequests(false)} 
+        />
+      )}
       
       {errorStatus && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 bg-red-100 text-red-700 px-4 py-2 rounded-lg shadow-lg border border-red-200 text-sm animate-in fade-in slide-in-from-top-4 duration-300">
