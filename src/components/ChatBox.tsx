@@ -40,6 +40,7 @@ export default function ChatBox({
   const channelRef = useRef<RealtimeChannel | null>(null)
   const [isManagingRequests, setIsManagingRequests] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null)
   const { onlineUsers } = usePresence(roomId, currentUserId)
 
   // Fetch pending requests count if owner
@@ -144,12 +145,20 @@ export default function ChatBox({
       audio_url: audioBlob ? URL.createObjectURL(audioBlob) : undefined,
       is_view_once: isViewOnce,
       is_viewed: false,
+      reply_to_id: replyingTo?.id || undefined,
+      replied_message: replyingTo ? {
+        id: replyingTo.id,
+        content: replyingTo.content,
+        audio_url: replyingTo.audio_url,
+        profiles: replyingTo.profiles
+      } : undefined,
       created_at: new Date().toISOString(),
       profiles: userProfile || undefined
     }
 
     // Instantly show on UI for the sender (optimistic)
     setMessages((prev) => [...prev, optimisticMessage])
+    setReplyingTo(null) // Clear reply state
 
     let audioUrl = null
     if (audioBlob) {
@@ -201,7 +210,8 @@ export default function ChatBox({
           content, 
           audio_url: audioUrl,
           is_view_once: isViewOnce,
-          is_viewed: false
+          is_viewed: false,
+          reply_to_id: optimisticMessage.reply_to_id
         }
       ])
 
@@ -340,6 +350,7 @@ export default function ChatBox({
           currentUserId={currentUserId} 
           onDeleteMessage={handleDeleteMessage}
           onUpdateMessage={handleUpdateMessage}
+          onReply={setReplyingTo}
           members={members}
         />
 
@@ -360,6 +371,8 @@ export default function ChatBox({
         onTyping={handleTyping} 
         members={members}
         currentUserId={currentUserId}
+        replyingTo={replyingTo}
+        onCancelReply={() => setReplyingTo(null)}
       />
     </div>
   )

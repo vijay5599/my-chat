@@ -25,6 +25,8 @@ export interface Message {
   audio_url?: string
   is_view_once?: boolean
   is_viewed?: boolean
+  reply_to_id?: string
+  replied_message?: Partial<Message> & { profiles?: Profile }
   created_at: string
   profiles?: Profile
 }

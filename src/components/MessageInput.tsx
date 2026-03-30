@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Mic, Eye, EyeOff, Smile, Send } from 'lucide-react'
+import { Mic, Eye, EyeOff, Smile, Send, X } from 'lucide-react'
 import EmojiPicker from './EmojiPicker'
-import { Profile } from '@/types'
+import { Profile, Message } from '@/types'
 import { Avatar } from './Avatar'
 import VoiceRecorder from './VoiceRecorder'
 import clsx from 'clsx'
@@ -12,12 +12,16 @@ export default function MessageInput({
   onSendMessage, 
   onTyping,
   members,
-  currentUserId
+  currentUserId,
+  replyingTo,
+  onCancelReply
 }: { 
   onSendMessage: (content: string, audioBlob?: Blob, isViewOnce?: boolean) => void,
   onTyping: (isTyping: boolean) => void,
   members: Profile[],
-  currentUserId: string
+  currentUserId: string,
+  replyingTo?: Message | null,
+  onCancelReply?: () => void
 }) {
   const [content, setContent] = useState('')
   const [isVoiceRecording, setIsVoiceRecording] = useState(false)
@@ -142,6 +146,27 @@ export default function MessageInput({
         </div>
       ) : (
         <div className="flex flex-col gap-2">
+          {replyingTo && (
+            <div className="flex items-center gap-3 p-3 bg-neutral-50 dark:bg-neutral-900 border dark:border-neutral-800 rounded-xl mb-1 animate-in slide-in-from-bottom-2 duration-200 group">
+              <div className="w-1 h-8 bg-blue-500 rounded-full" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-tight">
+                  Replying to {replyingTo.profiles?.username}
+                </p>
+                <p className="text-xs text-neutral-500 truncate">
+                  {replyingTo.content || (replyingTo.audio_url ? "Voice message" : "Original message")}
+                </p>
+              </div>
+              <button 
+                onClick={onCancelReply}
+                className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-full transition-colors"
+                title="Cancel reply"
+              >
+                <X size={16} className="text-neutral-400" />
+              </button>
+            </div>
+          )}
+
           {isEmojiPickerOpen && (
             <div ref={emojiPickerRef}>
               <EmojiPicker 
