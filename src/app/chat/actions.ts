@@ -9,9 +9,15 @@ export async function createRoom(formData: FormData) {
 
   if (!name) return { error: 'Room name is required' }
 
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) return { error: 'Not authenticated' }
+
   const { data, error } = await supabase
     .from('rooms')
-    .insert([{ name }])
+    .insert([{ 
+      name, 
+      owner_id: userData.user.id 
+    }])
     .select()
     .single()
 
@@ -20,15 +26,28 @@ export async function createRoom(formData: FormData) {
   }
 
   // Add creator to room_members
-  const { data: userData } = await supabase.auth.getUser()
-  if (userData.user) {
-    await supabase.from('room_members').insert([
-      { room_id: data.id, user_id: userData.user.id }
-    ])
-  }
+  await supabase.from('room_members').insert([
+    { room_id: data.id, user_id: userData.user.id }
+  ])
 
   revalidatePath('/chat')
   return { data }
+}
+
+export async function deleteRoom(roomId: string) {
+  const supabase = await createClient()
+  
+  const { error } = await supabase
+    .from('rooms')
+    .delete()
+    .eq('id', roomId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath('/chat')
+  return { success: true }
 }
 
 export async function joinRoom(roomId: string) {

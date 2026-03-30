@@ -13,6 +13,7 @@ export interface Profile {
 export interface Room {
   id: string
   name: string
+  owner_id?: string
   created_at: string
 }
 

@@ -1,11 +1,11 @@
 'use client'
 
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useState, useRef } from 'react'
-import { createRoom } from '@/app/chat/actions'
+import { createRoom, deleteRoom } from '@/app/chat/actions'
 import { Room, Profile } from '@/types'
-import { PlusCircle, Search, LogOut, Settings } from 'lucide-react'
+import { PlusCircle, Search, LogOut, Settings, Trash2 } from 'lucide-react'
 import { logout } from '@/app/auth/actions'
 import { Avatar } from './Avatar'
 import { useNav } from './NavigationWrapper'
@@ -22,10 +22,12 @@ export default function Sidebar({
   profile?: Profile | null
 }) {
   const pathname = usePathname()
+  const router = useRouter()
   const { setIsSidebarOpen, isMobile } = useNav()
   const [isCreating, setIsCreating] = useState(false)
   const [roomName, setRoomName] = useState('')
   const [search, setSearch] = useState('')
+  const [isDeleting, setIsDeleting] = useState<string | null>(null)
 
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,6 +37,26 @@ export default function Sidebar({
     await createRoom(formData)
     setRoomName('')
     setIsCreating(false)
+  }
+
+  const handleDeleteRoom = async (e: React.MouseEvent, roomId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (!confirm('Are you sure you want to delete this room? This will remove all messages.')) return
+
+    setIsDeleting(roomId)
+    const { error } = await deleteRoom(roomId)
+    
+    if (error) {
+      alert(`Failed to delete room: ${error}`)
+    } else {
+      // If we are currently in the deleted room, redirect to lobby
+      if (pathname === `/chat/${roomId}`) {
+        router.push('/chat')
+      }
+    }
+    setIsDeleting(null)
   }
 
   const filteredRooms = rooms.filter(r => r.name.toLowerCase().includes(search.toLowerCase()))
@@ -115,8 +137,12 @@ export default function Sidebar({
           <ul className="space-y-1">
             {filteredRooms.map(room => {
               const isActive = pathname === `/chat/${room.id}`
+              // Fallback: If no owner is assigned yet, allow current user to delete if they are likely the owner 
+              // or just show it so they can clean up existing rooms.
+              const isOwner = room.owner_id === profile?.id || !room.owner_id
+
               return (
-                <li key={room.id}>
+                <li key={room.id} className="group/item relative">
                   <Link
                     href={`/chat/${room.id}`}
                     onClick={(e) => {
@@ -128,7 +154,7 @@ export default function Sidebar({
                       }
                     }}
                     className={clsx(
-                      "block px-3 py-2 rounded-md transition duration-200",
+                      "block px-3 py-2 rounded-md transition duration-200 pr-10",
                       isActive 
                         ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 ring-1 ring-blue-500/20" 
                         : "hover:bg-neutral-200 dark:hover:bg-neutral-700"
@@ -137,6 +163,22 @@ export default function Sidebar({
                     <p className="font-medium truncate">{room.name}</p>
                     <p className="text-xs text-neutral-500">{new Date(room.created_at).toLocaleDateString('en-US')}</p>
                   </Link>
+
+                  {isOwner && (
+                    <button
+                      onClick={(e) => handleDeleteRoom(e, room.id)}
+                      disabled={isDeleting === room.id}
+                      className={clsx(
+                        "absolute right-2 top-1/2 -translate-y-1/2 p-1.5 transition-all disabled:opacity-50",
+                        "text-neutral-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md",
+                        // Make only partially transperant so it's discoverable, or fully visible on mobile
+                        isMobile ? "opacity-100" : "opacity-0 group-hover/item:opacity-100"
+                      )}
+                      title="Delete Room"
+                    >
+                      <Trash2 size={14} className={isDeleting === room.id ? 'animate-pulse' : ''} />
+                    </button>
+                  )}
                 </li>
               )
             })}
