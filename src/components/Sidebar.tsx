@@ -1,5 +1,6 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useState, useRef } from 'react'
 import { createRoom } from '@/app/chat/actions'
@@ -9,6 +10,7 @@ import { logout } from '@/app/auth/actions'
 import { Avatar } from './Avatar'
 import { useNav } from './NavigationWrapper'
 import { X, PanelLeftClose } from 'lucide-react'
+import clsx from 'clsx'
 
 export default function Sidebar({ 
   rooms, 
@@ -19,6 +21,7 @@ export default function Sidebar({
   userEmail?: string,
   profile?: Profile | null
 }) {
+  const pathname = usePathname()
   const { setIsSidebarOpen, isMobile } = useNav()
   const [isCreating, setIsCreating] = useState(false)
   const [roomName, setRoomName] = useState('')
@@ -110,18 +113,33 @@ export default function Sidebar({
           <p className="text-sm text-neutral-500 text-center py-4">No rooms found</p>
         ) : (
           <ul className="space-y-1">
-            {filteredRooms.map(room => (
-              <li key={room.id}>
-                <Link
-                  href={`/chat/${room.id}`}
-                  onClick={() => isMobile && setIsSidebarOpen(false)}
-                  className="block px-3 py-2 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 transition"
-                >
-                  <p className="font-medium truncate">{room.name}</p>
-                  <p className="text-xs text-neutral-500">{new Date(room.created_at).toLocaleDateString('en-US')}</p>
-                </Link>
-              </li>
-            ))}
+            {filteredRooms.map(room => {
+              const isActive = pathname === `/chat/${room.id}`
+              return (
+                <li key={room.id}>
+                  <Link
+                    href={`/chat/${room.id}`}
+                    onClick={(e) => {
+                      if (isActive) {
+                        e.preventDefault()
+                      }
+                      if (isMobile) {
+                        setIsSidebarOpen(false)
+                      }
+                    }}
+                    className={clsx(
+                      "block px-3 py-2 rounded-md transition duration-200",
+                      isActive 
+                        ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 ring-1 ring-blue-500/20" 
+                        : "hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                    )}
+                  >
+                    <p className="font-medium truncate">{room.name}</p>
+                    <p className="text-xs text-neutral-500">{new Date(room.created_at).toLocaleDateString('en-US')}</p>
+                  </Link>
+                </li>
+              )
+            })}
           </ul>
         )}
       </div>
