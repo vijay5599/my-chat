@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import ChatBox from '@/components/ChatBox'
 import { redirect } from 'next/navigation'
-import { joinRoom } from '@/app/chat/actions'
+import { joinRoom, getRoomMembers } from '@/app/chat/actions'
 
 export default async function RoomPage({ params }: { params: Promise<{ roomId: string }> }) {
   const resolvedParams = await params
@@ -47,6 +47,8 @@ export default async function RoomPage({ params }: { params: Promise<{ roomId: s
     console.error('Error fetching room:', roomError)
   }
 
+  // Fetch room members for mentions
+  const { data: members } = await getRoomMembers(resolvedParams.roomId)
 
   if (!room) {
     return <div className="p-8 text-center text-red-500">Room not found</div>
@@ -59,6 +61,7 @@ export default async function RoomPage({ params }: { params: Promise<{ roomId: s
         roomId={resolvedParams.roomId}
         currentUserId={user.id}
         room={room}
+        members={members || []}
       />
     </div>
   )

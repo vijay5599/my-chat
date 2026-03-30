@@ -19,12 +19,14 @@ export default function ChatBox({
   initialMessages,
   roomId,
   currentUserId,
-  room
+  room,
+  members
 }: {
   initialMessages: Message[],
   roomId: string,
   currentUserId: string,
-  room: Room
+  room: Room,
+  members: Profile[]
 }) {
   const { setIsSidebarOpen, isMobile } = useNav()
   // Memoize the supabase client so its reference never changes to prevent endless WebSocket resets
@@ -288,6 +290,7 @@ export default function ChatBox({
           currentUserId={currentUserId} 
           onDeleteMessage={handleDeleteMessage}
           onUpdateMessage={handleUpdateMessage}
+          members={members}
         />
 
         <div className="px-6 py-2 min-h-[40px] flex items-center justify-between">
@@ -302,7 +305,12 @@ export default function ChatBox({
         </div>
       </div>
 
-      <MessageInput onSendMessage={handleSendMessage} onTyping={handleTyping} />
+      <MessageInput 
+        onSendMessage={handleSendMessage} 
+        onTyping={handleTyping} 
+        members={members}
+        currentUserId={currentUserId}
+      />
     </div>
   )
 }

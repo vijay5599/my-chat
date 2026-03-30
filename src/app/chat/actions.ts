@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { Profile } from '@/types'
 
 export async function createRoom(formData: FormData) {
   const supabase = await createClient()
@@ -66,4 +67,22 @@ export async function joinRoom(roomId: string) {
   }
 
   return { success: true }
+}
+
+export async function getRoomMembers(roomId: string) {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('room_members')
+    .select('profiles(id, username, avatar_url)')
+    .eq('room_id', roomId)
+
+  if (error) {
+    console.error('Error fetching room members:', error)
+    return { error: error.message }
+  }
+
+  // Extract profiles from the join result
+  const members = data?.map(m => m.profiles).filter(Boolean) as unknown as Profile[]
+  return { data: members }
 }

@@ -2,23 +2,35 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Mic, Eye, EyeOff } from 'lucide-react'
+import { Profile } from '@/types'
+import { Avatar } from './Avatar'
 import VoiceRecorder from './VoiceRecorder'
 import clsx from 'clsx'
 
 export default function MessageInput({ 
   onSendMessage, 
-  onTyping 
+  onTyping,
+  members,
+  currentUserId
 }: { 
   onSendMessage: (content: string, audioBlob?: Blob, isViewOnce?: boolean) => void,
-  onTyping: (isTyping: boolean) => void
+  onTyping: (isTyping: boolean) => void,
+  members: Profile[],
+  currentUserId: string
 }) {
   const [content, setContent] = useState('')
   const [isVoiceRecording, setIsVoiceRecording] = useState(false)
   const [isViewOnce, setIsViewOnce] = useState(false)
+  const [mentionSearch, setMentionSearch] = useState<string | null>(null)
+  const [cursorPosition, setCursorPosition] = useState(0)
+  const inputRef = useRef<HTMLInputElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setContent(e.target.value)
+    const value = e.target.value
+    const pos = e.target.selectionStart || 0
+    setContent(value)
+    setCursorPosition(pos)
 
     onTyping(true)
     
@@ -29,7 +41,50 @@ export default function MessageInput({
     typingTimeoutRef.current = setTimeout(() => {
       onTyping(false)
     }, 2000)
+
+    // Mention detection logic
+    const lastAtSymbol = value.lastIndexOf('@', pos - 1)
+    if (lastAtSymbol !== -1) {
+      const textAfterAt = value.slice(lastAtSymbol + 1, pos)
+      // If there's a space or if it's too far back, cancel mention search
+      if (textAfterAt.includes(' ') || textAfterAt.length > 20) {
+        setMentionSearch(null)
+      } else {
+        setMentionSearch(textAfterAt)
+      }
+    } else {
+      setMentionSearch(null)
+    }
   }
+
+  const handleSelectMention = (username: string) => {
+    if (mentionSearch === null) return
+    const lastAtSymbol = content.lastIndexOf('@', cursorPosition - 1)
+    if (lastAtSymbol === -1) return
+
+    const beforeAt = content.slice(0, lastAtSymbol)
+    const afterMention = content.slice(cursorPosition)
+    const newContent = `${beforeAt}@${username} ${afterMention}`
+    
+    setContent(newContent)
+    setMentionSearch(null)
+    
+    // Put focus back and move cursor after the inserted mention
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus()
+        const newPos = beforeAt.length + username.length + 2 // +1 for @, +1 for space
+        inputRef.current.setSelectionRange(newPos, newPos)
+      }
+    }, 0)
+  }
+
+  const filteredMembers = mentionSearch !== null 
+    ? members.filter(m => 
+        m.id !== currentUserId && 
+        m.username.toLowerCase().includes(mentionSearch.toLowerCase())
+      )
+    : []
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -59,7 +114,25 @@ export default function MessageInput({
   }, [])
 
   return (
-    <div className="p-4 border-t dark:border-neutral-800 bg-white dark:bg-black">
+    <div className="p-4 border-t dark:border-neutral-800 bg-white dark:bg-black relative">
+      {mentionSearch !== null && filteredMembers.length > 0 && (
+        <div className="absolute bottom-full left-4 mb-2 w-64 max-h-48 overflow-y-auto bg-white dark:bg-neutral-900 border dark:border-neutral-800 rounded-xl shadow-xl z-50 animate-in slide-in-from-bottom-2 duration-200">
+          <div className="p-2 border-b dark:border-neutral-800 text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
+            Mention User
+          </div>
+          {filteredMembers.map((member) => (
+            <button
+              key={member.id}
+              type="button"
+              onClick={() => handleSelectMention(member.username)}
+              className="w-full flex items-center gap-3 px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-left"
+            >
+              <Avatar url={member.avatar_url} name={member.username} size="sm" />
+              <span className="text-sm font-medium">{member.username}</span>
+            </button>
+          ))}
+        </div>
+      )}
       {isVoiceRecording ? (
         <div className="flex justify-center">
           <VoiceRecorder onAudioReady={handleAudioReady} onCancel={handleVoiceCancel} />
@@ -91,6 +164,7 @@ export default function MessageInput({
             </button>
             
             <input
+              ref={inputRef}
               type="text"
               value={content}
               onChange={handleChange}

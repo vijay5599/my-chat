@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Message } from '@/types'
+import { Message, Profile } from '@/types'
 import { format } from 'date-fns'
 import clsx from 'clsx'
 import { Avatar } from './Avatar'
@@ -11,12 +11,14 @@ export default function MessageList({
   messages, 
   currentUserId,
   onDeleteMessage,
-  onUpdateMessage
+  onUpdateMessage,
+  members
 }: { 
   messages: Message[], 
   currentUserId: string,
   onDeleteMessage: (id: string, audioUrl?: string) => void,
-  onUpdateMessage: (id: string, updates: Partial<Message>) => void
+  onUpdateMessage: (id: string, updates: Partial<Message>) => void,
+  members: Profile[]
 }) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const [viewingMessage, setViewingMessage] = useState<Message | null>(null)
@@ -35,6 +37,41 @@ export default function MessageList({
       })
     }
     setViewingMessage(null)
+  }
+
+  const renderMessageContent = (content: string) => {
+    if (!content) return null
+
+    // Regex to match @username (stopping at space or end of string)
+    const mentionRegex = /@(\w+)/g
+    const parts = content.split(mentionRegex)
+    
+    if (parts.length === 1) return <p className="break-all leading-relaxed">{content}</p>
+
+    return (
+      <p className="break-all leading-relaxed">
+        {parts.map((part, i) => {
+          // Every odd part is a captured username from the regex
+          if (i % 2 === 1) {
+            const isMember = members.some(m => m.username === part)
+            return (
+              <span 
+                key={i} 
+                className={clsx(
+                  "font-bold px-1 rounded-sm",
+                  isMember 
+                    ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 border border-blue-200/50 dark:border-blue-800/50" 
+                    : "text-neutral-500"
+                )}
+              >
+                @{part}
+              </span>
+            )
+          }
+          return part
+        })}
+      </p>
+    )
   }
 
   return (
@@ -143,7 +180,7 @@ export default function MessageList({
                           />
                         </div>
                       )}
-                      {msg.content && <p className="break-all leading-relaxed">{msg.content}</p>}
+                      {msg.content && renderMessageContent(msg.content)}
                     </>
                   )}
 
@@ -211,11 +248,7 @@ export default function MessageList({
                     />
                   </div>
                 )}
-                {viewingMessage.content && (
-                  <p className="text-lg leading-relaxed dark:text-neutral-100 break-words">
-                    {viewingMessage.content}
-                  </p>
-                )}
+                    {viewingMessage.content && renderMessageContent(viewingMessage.content)}
               </div>
 
               <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs font-semibold bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-200 dark:border-amber-900/30">
