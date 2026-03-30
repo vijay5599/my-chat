@@ -121,9 +121,9 @@ export default function MessageInput({
   }, [])
 
   return (
-    <div className="p-4 border-t dark:border-neutral-800 bg-white dark:bg-black relative">
+    <div className="p-4 border-t dark:border-neutral-800 bg-white dark:bg-black relative pb-[calc(1rem+env(safe-area-inset-bottom))]">
       {mentionSearch !== null && filteredMembers.length > 0 && (
-        <div className="absolute bottom-full left-4 mb-2 w-64 max-h-48 overflow-y-auto bg-white dark:bg-neutral-900 border dark:border-neutral-800 rounded-xl shadow-xl z-50 animate-in slide-in-from-bottom-2 duration-200">
+        <div className="absolute bottom-full left-4 right-4 sm:right-auto mb-2 w-[calc(100%-2rem)] max-w-sm max-h-48 overflow-y-auto bg-white dark:bg-neutral-900 border dark:border-neutral-800 rounded-xl shadow-xl z-50 animate-in slide-in-from-bottom-2 duration-200">
           <div className="p-2 border-b dark:border-neutral-800 text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
             Mention User
           </div>
@@ -189,42 +189,42 @@ export default function MessageInput({
           )}
           <form onSubmit={handleSubmit} className="flex gap-2 items-center">
             <button
-                type="button"
-                onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
-                className={clsx(
-                "p-2 rounded-full transition-all duration-200",
-                isEmojiPickerOpen 
-                    ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400" 
-                    : "text-neutral-500 hover:text-blue-600 hover:bg-neutral-100 dark:hover:bg-neutral-900"
-                )}
-                title="Emojis"
+              type="button"
+              onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
+              className={clsx(
+                "w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200",
+                isEmojiPickerOpen
+                  ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                  : "text-neutral-500 hover:text-blue-600 hover:bg-neutral-100 dark:hover:bg-neutral-900"
+              )}
+              title="Emojis"
             >
-                <Smile size={20} />
+              <Smile size={18} />
             </button>
 
             <button
               type="button"
               onClick={() => setIsVoiceRecording(true)}
-              className="p-2 text-neutral-500 hover:text-blue-600 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-full transition-colors"
+              className="w-10 h-10 flex items-center justify-center text-neutral-500 hover:text-blue-600 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-full transition-colors"
               title="Voice Message"
             >
-              <Mic size={20} />
+              <Mic size={18} />
             </button>
-            
+
             <button
               type="button"
               onClick={() => setIsViewOnce(!isViewOnce)}
               className={clsx(
-                "p-2 rounded-full transition-all duration-200",
-                isViewOnce 
-                  ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 shadow-sm" 
+                "w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200",
+                isViewOnce
+                  ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 shadow-sm"
                   : "text-neutral-500 hover:text-amber-600 hover:bg-neutral-100 dark:hover:bg-neutral-900"
               )}
               title={isViewOnce ? "View Once Active" : "Set as View Once"}
             >
-              {isViewOnce ? <EyeOff size={20} /> : <Eye size={20} />}
+              {isViewOnce ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
-            
+
             <input
               ref={inputRef}
               type="text"
@@ -232,21 +232,21 @@ export default function MessageInput({
               onChange={handleChange}
               placeholder={isViewOnce ? "Type a secret message..." : "Type a message..."}
               className={clsx(
-                "flex-1 rounded-full px-4 py-2 border transition-all duration-200 bg-neutral-100 dark:bg-neutral-900 focus:outline-none focus:ring-1 text-sm",
-                isViewOnce 
-                  ? "border-amber-400/50 focus:ring-amber-500 placeholder:text-amber-600/50" 
+                "flex-1 min-w-0 h-10 rounded-full px-4 border transition-all duration-200 bg-neutral-100 dark:bg-neutral-900 focus:outline-none focus:ring-2 text-sm",
+                isViewOnce
+                  ? "border-amber-400/50 focus:ring-amber-500 placeholder:text-amber-600/50"
                   : "dark:border-neutral-700 focus:ring-blue-500"
               )}
             />
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={!content.trim()}
               className={clsx(
-                "p-2.5 rounded-full text-sm font-medium disabled:opacity-50 transition-all shadow-sm active:scale-95",
+                "w-10 h-10 rounded-full text-sm font-medium disabled:opacity-50 transition-all shadow-sm active:scale-95 flex items-center justify-center",
                 isViewOnce ? "bg-amber-600 hover:bg-amber-700 text-white" : "bg-blue-600 hover:bg-blue-700 text-white"
               )}
             >
-              <Send size={18} />
+              <Send size={16} />
             </button>
           </form>
           {isViewOnce && (

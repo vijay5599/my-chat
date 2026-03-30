@@ -66,9 +66,9 @@ export default function Sidebar({
   const filteredRooms = rooms.filter(r => r.name.toLowerCase().includes(search.toLowerCase()))
 
   return (
-    <div className="w-full bg-neutral-100 dark:bg-neutral-800 border-r dark:border-neutral-700 flex flex-col h-full">
-      <div className="p-4 border-b dark:border-neutral-700 flex items-center justify-between bg-neutral-100/50 dark:bg-neutral-800/50">
-        <h2 className="font-semibold text-lg">Chats</h2>
+    <div className="w-full bg-white/80 dark:bg-slate-900/80 border-r border-white/30 dark:border-slate-700/70 shadow-[var(--card-shadow)] backdrop-blur-xl flex flex-col h-full">
+      <div className="p-4 border-b border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between bg-white/80 dark:bg-slate-900/70 backdrop-blur-sm">
+        <h2 className="font-bold text-lg text-slate-700 dark:text-slate-100 tracking-tight">Chats</h2>
         <div className="flex items-center gap-1">
           <button onClick={() => setIsCreating(true)} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors" title="Create Room">
             <PlusCircle size={18} />
@@ -100,7 +100,7 @@ export default function Sidebar({
             placeholder="Search rooms..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-white dark:bg-neutral-900 border dark:border-neutral-700 rounded-md pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-2 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-300 shadow-inner"
           />
         </div>
       </div>

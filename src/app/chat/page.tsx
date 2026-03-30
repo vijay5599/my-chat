@@ -7,10 +7,10 @@ export default function ChatIndexPage() {
   const { setIsSidebarOpen, isMobile } = useNav()
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden">
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_rgba(148,163,184,0.08),_transparent_70%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(96,165,250,0.25),_rgba(15,23,42,0.8)_70%)]">
       {/* Lobby Header for Mobile Toggle */}
       {isMobile && (
-        <div className="border-b px-6 py-4 flex items-center gap-3 bg-white dark:bg-black z-20">
+        <div className="border-b px-6 py-4 flex items-center gap-3 bg-white/80 dark:bg-slate-900/90 backdrop-blur-md z-20">
           <button 
             onClick={() => setIsSidebarOpen(true)}
             className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-colors text-neutral-500"

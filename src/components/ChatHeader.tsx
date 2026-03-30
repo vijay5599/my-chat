@@ -20,7 +20,7 @@ export default function ChatHeader({
   const { isSidebarOpen, setIsSidebarOpen, isMobile } = useNav()
 
   return (
-    <div className="border-b px-6 py-4 flex items-center justify-between shadow-sm bg-white dark:bg-black z-20">
+    <div className="border-b border-slate-200/70 dark:border-slate-700/70 px-6 py-4 flex items-center justify-between bg-white/80 dark:bg-slate-950/70 backdrop-blur-md shadow-[var(--card-shadow)] z-20">
       <div className="flex items-center gap-3">
         {(isMobile || !isSidebarOpen) && (
           <button 

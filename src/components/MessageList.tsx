@@ -7,15 +7,15 @@ import clsx from 'clsx'
 import { Avatar } from './Avatar'
 import { Mic, Trash2, Eye, EyeOff, X, AlertTriangle, Reply } from 'lucide-react'
 
-export default function MessageList({ 
-  messages, 
+export default function MessageList({
+  messages,
   currentUserId,
   onDeleteMessage,
   onUpdateMessage,
   onReply,
   members
-}: { 
-  messages: Message[], 
+}: {
+  messages: Message[],
   currentUserId: string,
   onDeleteMessage: (id: string, audioUrl?: string) => void,
   onUpdateMessage: (id: string, updates: Partial<Message>) => void,
@@ -32,10 +32,10 @@ export default function MessageList({
   const handleCloseView = () => {
     if (viewingMessage && viewingMessage.user_id !== currentUserId) {
       // Mark as viewed and clear content for privacy
-      onUpdateMessage(viewingMessage.id, { 
-        is_viewed: true, 
-        content: '', 
-        audio_url: undefined 
+      onUpdateMessage(viewingMessage.id, {
+        is_viewed: true,
+        content: '',
+        audio_url: undefined
       })
     }
     setViewingMessage(null)
@@ -47,7 +47,7 @@ export default function MessageList({
     // Regex to match @username (stopping at space or end of string)
     const mentionRegex = /@(\w+)/g
     const parts = content.split(mentionRegex)
-    
+
     if (parts.length === 1) return <p className="break-words leading-relaxed text-sm">{content}</p>
 
     return (
@@ -57,12 +57,12 @@ export default function MessageList({
           if (i % 2 === 1) {
             const isMember = members.some(m => m.username === part)
             return (
-              <span 
-                key={i} 
+              <span
+                key={i}
                 className={clsx(
                   "font-bold px-1 rounded-sm",
-                  isMember 
-                    ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 border border-blue-200/50 dark:border-blue-800/50" 
+                  isMember
+                    ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 border border-blue-200/50 dark:border-blue-800/50"
                     : "text-neutral-500"
                 )}
               >
@@ -77,7 +77,7 @@ export default function MessageList({
   }
 
   return (
-    <div className="flex-1 min-w-[300px] overflow-y-auto p-6 space-y-4 relative">
+    <div className="flex-1 min-w-[300px] overflow-y-auto p-1 space-y-4 relative">
       {messages.length === 0 ? (
         <div className="text-center text-neutral-500 mt-10">
           No messages yet. Be the first to say hi!
@@ -87,11 +87,11 @@ export default function MessageList({
           const isMe = msg.user_id === currentUserId
           const isViewOnce = msg.is_view_once
           const isViewed = msg.is_viewed
-          
+
           return (
             <div
               key={msg.id}
-              className={clsx('flex gap-3 group px-2 relative', isMe ? 'flex-row-reverse' : 'flex-row')}
+              className={clsx('flex w-full gap-3 group px-2 relative', isMe ? 'flex-row-reverse' : 'flex-row')}
             >
               <Avatar
                 url={msg.profiles?.avatar_url}
@@ -99,21 +99,21 @@ export default function MessageList({
                 size="sm"
               />
               <div
-                className={clsx('flex flex-col min-w-0 max-w-[80%]', isMe ? 'items-end' : 'items-start')}
+                className={clsx('flex flex-col min-w-0 w-full max-w-[85%] md:max-w-[73%] lg:max-w-[67%]', isMe ? 'items-end' : 'items-start')}
               >
                 <div className={clsx('flex items-center gap-2', isMe ? 'flex-row-reverse' : 'flex-row')}>
                   <div
                     className={clsx(
-                      'rounded-2xl px-4 py-2 text-sm relative transition-all duration-200 shadow-sm',
+                      'rounded-2xl px-4 py-2 text-sm relative transition-all duration-200 shadow-sm break-words whitespace-pre-wrap overflow-hidden',
                       isMe
-                        ? (isViewOnce 
-                            ? (isViewed ? 'bg-neutral-100 dark:bg-neutral-900 text-neutral-400 border border-neutral-200 dark:border-neutral-800 rounded-tr-none' : 'bg-amber-600 text-white rounded-tr-none ring-2 ring-amber-400/30') 
-                            : 'bg-blue-600 text-white rounded-tr-none')
-                        : (isViewOnce 
-                            ? (isViewed 
-                                ? 'bg-neutral-50 dark:bg-neutral-900/50 text-neutral-400 border border-neutral-200 dark:border-neutral-800 rounded-tl-none italic' 
-                                : 'bg-amber-100 dark:bg-amber-900/30 border-2 border-amber-400/50 text-amber-900 dark:text-amber-100 rounded-tl-none cursor-pointer hover:scale-[1.02] active:scale-[0.98]') 
-                            : 'bg-neutral-200 dark:bg-neutral-800 text-foreground rounded-tl-none')
+                        ? (isViewOnce
+                          ? (isViewed ? 'bg-neutral-100 dark:bg-neutral-900 text-neutral-400 border border-neutral-200 dark:border-neutral-800 rounded-tr-none' : 'bg-amber-600 text-white rounded-tr-none ring-2 ring-amber-400/30')
+                          : 'bg-blue-600 text-white rounded-tr-none')
+                        : (isViewOnce
+                          ? (isViewed
+                            ? 'bg-neutral-50 dark:bg-neutral-900/50 text-neutral-400 border border-neutral-200 dark:border-neutral-800 rounded-tl-none italic'
+                            : 'bg-amber-100 dark:bg-amber-900/30 border-2 border-amber-400/50 text-amber-900 dark:text-amber-100 rounded-tl-none cursor-pointer hover:scale-[1.02] active:scale-[0.98]')
+                          : 'bg-neutral-200 dark:bg-neutral-800 text-foreground rounded-tl-none')
                     )}
                     onClick={() => isViewOnce && !isMe && !isViewed && setViewingMessage(msg)}
                   >
@@ -121,8 +121,8 @@ export default function MessageList({
                     {msg.replied_message && (
                       <div className={clsx(
                         "mb-2 p-2 rounded-lg border-l-4 text-[11px] line-clamp-2 max-w-full truncate",
-                        isMe 
-                          ? "bg-blue-700/30 border-blue-400 text-blue-100" 
+                        isMe
+                          ? "bg-blue-700/30 border-blue-400 text-blue-100"
                           : "bg-neutral-300/50 dark:bg-neutral-700/50 border-neutral-400 text-neutral-500"
                       )}>
                         <p className="font-bold opacity-80 mb-0.5">
@@ -135,8 +135,8 @@ export default function MessageList({
                     {!isMe && (
                       <p className={clsx(
                         "text-[10px] font-bold mb-1 uppercase tracking-tight",
-                        isViewOnce 
-                          ? (isViewed ? "text-neutral-400" : "text-amber-600 dark:text-amber-400") 
+                        isViewOnce
+                          ? (isViewed ? "text-neutral-400" : "text-amber-600 dark:text-amber-400")
                           : "text-blue-600 dark:text-blue-400"
                       )}>
                         {msg.profiles?.username || 'User'}
@@ -192,8 +192,8 @@ export default function MessageList({
                     <div
                       className={clsx(
                         'text-[9px] mt-1.5 opacity-70 text-right font-medium flex items-center justify-end gap-1',
-                        isMe 
-                          ? (isViewed ? 'text-neutral-400' : 'text-blue-100') 
+                        isMe
+                          ? (isViewed ? 'text-neutral-400' : 'text-blue-100')
                           : (isViewOnce ? (isViewed ? 'text-neutral-400' : 'text-amber-700 dark:text-amber-300') : 'text-neutral-500')
                       )}
                     >
@@ -247,7 +247,7 @@ export default function MessageList({
                 <AlertTriangle size={20} />
                 <h3 className="font-bold">Secret Message</h3>
               </div>
-              <button 
+              <button
                 onClick={handleCloseView}
                 className="p-1 hover:bg-white/20 rounded-full transition-colors"
                 title="Close"
@@ -258,10 +258,10 @@ export default function MessageList({
 
             <div className="p-8">
               <div className="flex items-center gap-3 mb-6">
-                <Avatar 
-                  url={viewingMessage.profiles?.avatar_url} 
-                  name={viewingMessage.profiles?.username} 
-                  size="sm" 
+                <Avatar
+                  url={viewingMessage.profiles?.avatar_url}
+                  name={viewingMessage.profiles?.username}
+                  size="sm"
                 />
                 <div>
                   <p className="text-sm font-bold">{viewingMessage.profiles?.username}</p>
@@ -280,7 +280,7 @@ export default function MessageList({
                     />
                   </div>
                 )}
-                    {viewingMessage.content && renderMessageContent(viewingMessage.content)}
+                {viewingMessage.content && renderMessageContent(viewingMessage.content)}
               </div>
 
               <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs font-semibold bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-200 dark:border-amber-900/30">

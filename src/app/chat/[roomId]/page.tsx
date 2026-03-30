@@ -131,7 +131,7 @@ export default async function RoomPage({ params }: { params: Promise<{ roomId: s
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-white dark:bg-black overflow-hidden relative">
+    <div className="flex-1 flex flex-col h-full bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.15),_rgba(148,163,184,0.06),_transparent_80%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(96,165,250,0.22),_rgba(15,23,42,0.90)_70%)] overflow-hidden relative">
       <ChatBox
         initialMessages={messages || []}
         roomId={resolvedParams.roomId}
