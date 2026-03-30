@@ -64,6 +64,10 @@ export default function ChatBox({
         const { messageId } = payload.payload
         setMessages((prev) => prev.filter(msg => msg.id !== messageId))
       })
+      .on('broadcast', { event: 'update_message' }, (payload) => {
+        const updatedMessage = payload.payload as Message
+        setMessages((prev) => prev.map(msg => msg.id === updatedMessage.id ? updatedMessage : msg))
+      })
       .on('broadcast', { event: 'typing' }, (payload) => {
         const { userId, isTyping } = payload.payload
         if (userId === currentUserId) return
@@ -88,7 +92,7 @@ export default function ChatBox({
 
   const [errorStatus, setErrorStatus] = useState<string | null>(null)
 
-  const handleSendMessage = async (content: string, audioBlob?: Blob) => {
+  const handleSendMessage = async (content: string, audioBlob?: Blob, isViewOnce?: boolean) => {
     if (!content.trim() && !audioBlob) return
 
     // Pre-generate a UUID so the Realtime event has the exact same ID, preventing duplicates
@@ -99,6 +103,8 @@ export default function ChatBox({
       user_id: currentUserId,
       content,
       audio_url: audioBlob ? URL.createObjectURL(audioBlob) : undefined,
+      is_view_once: isViewOnce,
+      is_viewed: false,
       created_at: new Date().toISOString(),
       profiles: userProfile || undefined
     }
@@ -154,7 +160,9 @@ export default function ChatBox({
           room_id: roomId, 
           user_id: currentUserId, 
           content, 
-          audio_url: audioUrl 
+          audio_url: audioUrl,
+          is_view_once: isViewOnce,
+          is_viewed: false
         }
       ])
 
@@ -164,6 +172,35 @@ export default function ChatBox({
       setTimeout(() => setErrorStatus(null), 5000)
       // Rollback on failure
       setMessages((prev) => prev.filter(msg => msg.id !== optimisticId))
+    }
+  }
+
+  const handleUpdateMessage = async (messageId: string, updates: Partial<Message>) => {
+    // 1. Optimistic UI
+    setMessages((prev) => prev.map(msg => msg.id === messageId ? { ...msg, ...updates } : msg))
+
+    // 2. Broadcast
+    if (channelRef.current) {
+      const messageToUpdate = messages.find(m => m.id === messageId);
+      if (messageToUpdate) {
+        await channelRef.current.send({
+          type: 'broadcast',
+          event: 'update_message',
+          payload: { ...messageToUpdate, ...updates }
+        })
+      }
+    }
+
+    // 3. Update DB
+    const { error } = await supabase
+      .from('messages')
+      .update(updates)
+      .eq('id', messageId)
+
+    if (error) {
+      console.error('Error updating message:', error)
+      setErrorStatus(`Failed to update message: ${error.message}`)
+      setTimeout(() => setErrorStatus(null), 5000)
     }
   }
 
@@ -250,6 +287,7 @@ export default function ChatBox({
           messages={messages} 
           currentUserId={currentUserId} 
           onDeleteMessage={handleDeleteMessage}
+          onUpdateMessage={handleUpdateMessage}
         />
 
         <div className="px-6 py-2 min-h-[40px] flex items-center justify-between">

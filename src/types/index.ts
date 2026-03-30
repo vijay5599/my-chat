@@ -22,6 +22,8 @@ export interface Message {
   user_id: string
   content: string
   audio_url?: string
+  is_view_once?: boolean
+  is_viewed?: boolean
   created_at: string
   profiles?: Profile
 }
