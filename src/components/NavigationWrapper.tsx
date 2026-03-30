@@ -29,7 +29,7 @@ export default function NavigationWrapper({
 
   useEffect(() => {
     const handleResize = () => {
-      const mobile = window.innerWidth < 1024
+      const mobile = window.innerWidth < 768
       setIsMobile(mobile)
       if (mobile) setIsSidebarOpen(false)
       else setIsSidebarOpen(true)
@@ -53,9 +53,9 @@ export default function NavigationWrapper({
 
         {/* Sidebar Container */}
         <div className={clsx(
-          "h-full z-50 transition-all duration-300 ease-in-out bg-white dark:bg-neutral-800 overflow-hidden",
-          isMobile ? "fixed left-0 top-0 bottom-0 shadow-2xl" : "relative border-r dark:border-neutral-700",
-          isSidebarOpen ? "w-72 translate-x-0" : "w-0 -translate-x-full lg:w-0"
+          "h-full z-50 transition-all duration-300 ease-in-out bg-white dark:bg-neutral-800",
+          isMobile ? "fixed left-0 top-0 bottom-0 shadow-2xl w-72" : "relative border-r dark:border-neutral-700 w-72",
+          !isSidebarOpen && (isMobile ? "-translate-x-full" : "w-0 overflow-hidden border-none")
         )}>
           {sidebar}
         </div>

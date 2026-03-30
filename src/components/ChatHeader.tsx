@@ -10,10 +10,11 @@ export default function ChatHeader({ room, onlineCount }: { room: Room, onlineCo
   return (
     <div className="border-b px-6 py-4 flex items-center justify-between shadow-sm bg-white dark:bg-black z-20">
       <div className="flex items-center gap-3">
-        {(!isSidebarOpen || isMobile) && (
+        {(isMobile || !isSidebarOpen) && (
           <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-colors text-neutral-500"
+            aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
             title={isSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
           >
             <Menu size={22} />
