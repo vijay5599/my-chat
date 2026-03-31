@@ -326,6 +326,8 @@ export default function ChatBox({
       <ChatHeader 
         room={room} 
         onlineCount={onlineUsers.length} 
+        onlineUsers={onlineUsers}
+        members={members}
         isOwner={room.owner_id === currentUserId}
         onManageRequests={() => setIsManagingRequests(true)}
         pendingCount={pendingCount}

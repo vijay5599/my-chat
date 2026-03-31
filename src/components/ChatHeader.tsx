@@ -2,19 +2,24 @@
 
 import { useNav } from './NavigationWrapper'
 import { Menu, Clock, Users, Pencil, Check, X } from 'lucide-react'
-import { Room } from '@/types'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { renameRoom } from '@/app/chat/actions'
+import { Room, Profile } from '@/types'
+import { Avatar } from './Avatar'
 
 export default function ChatHeader({ 
   room, 
   onlineCount, 
+  onlineUsers,
+  members = [],
   isOwner, 
   onManageRequests,
   pendingCount = 0
 }: { 
   room: Room, 
   onlineCount: number,
+  onlineUsers: string[],
+  members?: Profile[],
   isOwner?: boolean,
   onManageRequests?: () => void,
   pendingCount?: number
@@ -23,6 +28,26 @@ export default function ChatHeader({
   const [isEditing, setIsEditing] = useState(false)
   const [newName, setNewName] = useState(room.name)
   const [isSaving, setIsSaving] = useState(false)
+  const [isOnlineList, setIsOnlineList] = useState(false)
+  const popupRef = useRef<HTMLDivElement>(null)
+
+  // Map online IDs to profiles
+  const onlineMembersList = members.filter(m => onlineUsers.includes(m.id))
+
+  // Handle click outside to close popup
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
+        setIsOnlineList(false)
+      }
+    }
+
+    if (isOnlineList) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isOnlineList])
 
   // Update local name if room prop changes (e.g., from realtime update)
   useEffect(() => {
@@ -51,6 +76,10 @@ export default function ChatHeader({
       setNewName(room.name)
       setIsEditing(false)
     }
+  }
+
+  const handleOnlineList = () => {
+    setIsOnlineList(!isOnlineList)
   }
 
   return (
@@ -138,11 +167,66 @@ export default function ChatHeader({
           </button>
         )}
 
-        <div className="flex items-center gap-2">
-          <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-          <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
-            {onlineCount} online
-          </span>
+        <div className="flex items-center gap-2 relative">
+          <button 
+            onClick={handleOnlineList}
+            className="flex items-center gap-2 px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-all group"
+          >
+            <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-xs font-semibold text-neutral-600 dark:text-neutral-400 group-hover:text-blue-500 transition-colors">
+              {onlineCount} online
+            </span>
+          </button>
+
+          {isOnlineList && (
+            <div 
+              ref={popupRef}
+              className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
+            >
+              <div className="p-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+                <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <Users size={12} />
+                  Online People
+                </h3>
+              </div>
+              
+              <div className="max-h-60 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
+                {onlineMembersList.length === 0 ? (
+                  <div className="py-8 text-center text-xs text-slate-400 italic">
+                    Others are offline
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {onlineMembersList.map((member) => (
+                      <div 
+                        key={member.id} 
+                        className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors group cursor-default"
+                      >
+                        <div className="relative">
+                          <Avatar url={member.avatar_url} name={member.username} size="sm" />
+                          <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
+                            {member.username}
+                          </p>
+                          <p className="text-[10px] text-green-500 font-medium tracking-wide">
+                            Active now
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              <div className="p-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/20">
+                <p className="text-[9px] text-center text-slate-400 uppercase font-bold tracking-tighter">
+                  Total {onlineCount} {onlineCount === 1 ? 'member' : 'members'} online
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
