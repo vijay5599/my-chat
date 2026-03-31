@@ -1,7 +1,11 @@
 'use client'
 
-import { useState, useEffect, createContext, useContext } from 'react'
+import { useState, useEffect, createContext, useContext, useMemo } from 'react'
 import clsx from 'clsx'
+import { createClient } from '@/lib/supabase/client'
+import { Room } from '@/types'
+import { usePathname } from 'next/navigation'
+import NotificationToast from './NotificationToast'
 
 interface NavContextType {
   isSidebarOpen: boolean
@@ -19,13 +23,73 @@ export function useNav() {
 
 export default function NavigationWrapper({ 
   sidebar, 
-  children 
+  children,
+  currentUserId,
+  allRooms = []
 }: { 
   sidebar: React.ReactNode
-  children: React.ReactNode 
+  children: React.ReactNode
+  currentUserId?: string
+  allRooms?: Room[]
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
+  const pathname = usePathname()
+  const supabase = useMemo(() => createClient(), [])
+  
+  // Notification state
+  const [notification, setNotification] = useState<{
+    message: string
+    senderName: string
+    roomName: string
+    roomId: string
+  } | null>(null)
+
+  useEffect(() => {
+    if (!currentUserId) return
+
+    const channel = supabase
+      .channel('global-notifications')
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'messages' 
+      }, async (payload) => {
+        const newMessage = payload.new
+        
+        // 1. Don't notify for our own messages
+        if (newMessage.user_id === currentUserId) return
+        
+        // 2. Don't notify if we are already in that room
+        const currentRoomId = pathname.split('/chat/')[1]
+        if (newMessage.room_id === currentRoomId) return
+        
+        // 3. Check if we're a member (The RLS handles this, we only get events for what we can see)
+        // Fetch sender profile for the toast
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', newMessage.user_id)
+          .single()
+        
+        // 4. Find room name
+        const room = allRooms.find(r => r.id === newMessage.room_id)
+        
+        if (profile && room) {
+          setNotification({
+            message: newMessage.content,
+            senderName: profile.username || 'Someone',
+            roomName: room.name,
+            roomId: room.id
+          })
+        }
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [currentUserId, pathname, allRooms, supabase])
 
   useEffect(() => {
     const handleResize = () => {
@@ -66,6 +130,14 @@ export default function NavigationWrapper({
         <main className="flex-1 flex flex-col h-full bg-white dark:bg-black relative z-10 overflow-hidden">
           {children}
         </main>
+
+        {/* Global Notifications */}
+        {notification && (
+          <NotificationToast 
+            {...notification}
+            onClose={() => setNotification(null)}
+          />
+        )}
       </div>
     </NavContext.Provider>
   )

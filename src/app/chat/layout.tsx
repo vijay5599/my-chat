@@ -46,6 +46,8 @@ export default async function ChatLayout({
 
   return (
     <NavigationWrapper 
+      currentUserId={user.id}
+      allRooms={allRooms || []}
       sidebar={
         <Sidebar 
           rooms={allRooms || []} 
