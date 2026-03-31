@@ -11,6 +11,8 @@ import { Avatar } from './Avatar'
 import { useNav } from './NavigationWrapper'
 import { X, PanelLeftClose } from 'lucide-react'
 import clsx from 'clsx'
+import { useEffect, useMemo } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 export default function Sidebar({ 
   rooms, 
@@ -32,6 +34,39 @@ export default function Sidebar({
   const [roomName, setRoomName] = useState('')
   const [search, setSearch] = useState('')
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
+  
+  // Realtime rooms state
+  const [localRooms, setLocalRooms] = useState<Room[]>(rooms)
+  const supabase = useMemo(() => createClient(), [])
+
+  // Sync with props if they change (from server)
+  useEffect(() => {
+    setLocalRooms(rooms)
+  }, [rooms])
+
+  // Subscribe to room changes (rename, delete, insert)
+  useEffect(() => {
+    const channel = supabase
+      .channel('sidebar-rooms')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'rooms' 
+      }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          setLocalRooms(prev => [payload.new as Room, ...prev])
+        } else if (payload.eventType === 'UPDATE') {
+          setLocalRooms(prev => prev.map(r => r.id === payload.new.id ? payload.new as Room : r))
+        } else if (payload.eventType === 'DELETE') {
+          setLocalRooms(prev => prev.filter(r => r.id !== payload.old.id))
+        }
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [supabase])
 
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,7 +98,7 @@ export default function Sidebar({
     setIsDeleting(null)
   }
 
-  const filteredRooms = rooms.filter(r => r.name.toLowerCase().includes(search.toLowerCase()))
+  const filteredRooms = localRooms.filter(r => r.name.toLowerCase().includes(search.toLowerCase()))
 
   return (
     <div className="w-full bg-white/80 dark:bg-slate-900/80 border-r border-white/30 dark:border-slate-700/70 shadow-[var(--card-shadow)] backdrop-blur-xl flex flex-col h-full">

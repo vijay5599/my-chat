@@ -154,3 +154,20 @@ export async function getRoomMembers(roomId: string) {
   const members = data?.map(m => m.profiles).filter(Boolean) as unknown as Profile[]
   return { data: members }
 }
+
+export async function renameRoom(roomId: string, newName: string) {
+  const supabase = await createClient()
+  
+  const { error } = await supabase
+    .from('rooms')
+    .update({ name: newName })
+    .eq('id', roomId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath('/chat')
+  revalidatePath(`/chat/${roomId}`)
+  return { success: true }
+}
