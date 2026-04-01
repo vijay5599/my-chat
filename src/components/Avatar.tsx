@@ -46,7 +46,7 @@ export function Avatar({ url, name, size = 'md', isOnline = false }: AvatarProps
           src={url}
           alt={name || 'Avatar'}
           fill
-          className="object-cover"
+          className="object-cover rounded-full"
         />
       ) : (
         <span>{initials}</span>

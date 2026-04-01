@@ -432,8 +432,10 @@ export default function ChatBox({
       <div 
         className="flex-1 overflow-hidden flex flex-col relative"
         style={{
-          backgroundColor: roomData.wallpaper_color || undefined,
-          backgroundImage: roomData.wallpaper_url ? `url(${roomData.wallpaper_url})` : undefined,
+          backgroundColor: roomData.wallpaper_color && !roomData.wallpaper_color.includes('gradient') ? roomData.wallpaper_color : undefined,
+          backgroundImage: roomData.wallpaper_url 
+            ? `url(${roomData.wallpaper_url})` 
+            : (roomData.wallpaper_color?.includes('gradient') ? roomData.wallpaper_color : undefined),
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
