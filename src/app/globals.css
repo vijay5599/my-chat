@@ -18,16 +18,14 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #020617;
-    --foreground: #e2e8f0;
-    --surface: #0b1120;
-    --surface-2: #0a1327;
-    --accent: #60a5fa;
-    --accent-2: #818cf8;
-    --card-shadow: 0 24px 60px rgba(10, 14, 35, 0.45);
-  }
+.dark :root {
+  --background: #020617;
+  --foreground: #e2e8f0;
+  --surface: #0b1120;
+  --surface-2: #0a1327;
+  --accent: #60a5fa;
+  --accent-2: #818cf8;
+  --card-shadow: 0 24px 60px rgba(10, 14, 35, 0.45);
 }
 
 * {
@@ -51,10 +49,8 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-@media (prefers-color-scheme: dark) {
-  body {
-    background: radial-gradient(circle at top left, #07162d, #0a103f 40%, #050b1e 100%);
-  }
+.dark body {
+  background: radial-gradient(circle at top left, #07162d, #0a103f 40%, #050b1e 100%);
 }
 
 body::-webkit-scrollbar {
@@ -81,10 +77,8 @@ input, textarea {
   background: var(--surface);
 }
 
-@media (prefers-color-scheme: dark) {
-  input, textarea {
-    border-color: #1e293b;
-    background: #0b1120;
-  }
+.dark input, .dark textarea {
+  border-color: #1e293b;
+  background: #0b1120;
 }
 

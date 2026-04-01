@@ -42,6 +42,7 @@ export default function ChatBox({
   const [isManagingRequests, setIsManagingRequests] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
   const [replyingTo, setReplyingTo] = useState<Message | null>(null)
+  const [roomData, setRoomData] = useState<Room>(room)
   const { onlineUsers } = usePresence(roomId, currentUserId)
 
   // Fetch pending requests count if owner
@@ -95,6 +96,14 @@ export default function ChatBox({
       .channel(`realtime:messages:${roomId}`)
       .on('broadcast', { event: 'new_message' }, (payload) => {
         const newMessage = payload.payload as Message
+        
+        // Play "pop" sound for incoming messages
+        if (newMessage.user_id !== currentUserId) {
+          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3')
+          audio.volume = 0.5
+          audio.play().catch(e => console.log('Audio play failed:', e))
+        }
+
         setMessages((prev) => {
           // Prevent exact duplicate inserts
           if (prev.some(msg => msg.id === newMessage.id)) return prev
@@ -141,10 +150,24 @@ export default function ChatBox({
       })
       .subscribe()
 
+    // Subscribe to room changes (wallpaper real-time update)
+    const roomChannel = supabase
+      .channel(`room_sync:${roomId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'rooms',
+        filter: `id=eq.${roomId}`
+      }, (payload) => {
+        setRoomData(payload.new as Room)
+      })
+      .subscribe()
+
     channelRef.current = channel
 
     return () => {
       supabase.removeChannel(channel)
+      supabase.removeChannel(roomChannel)
     }
   }, [roomId, supabase, currentUserId])
 
@@ -211,6 +234,11 @@ export default function ChatBox({
 
     // Broadcast message to all peers with the real URL (or optimistic content)
     if (channelRef.current) {
+      // Play "pop" sound for outgoing message
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3')
+      audio.volume = 0.3
+      audio.play().catch(e => console.log('Audio play failed:', e))
+
       await channelRef.current.send({
         type: 'broadcast',
         event: 'new_message',
@@ -379,11 +407,11 @@ export default function ChatBox({
   return (
     <div className="flex-1 flex flex-col overflow-hidden relative">
       <ChatHeader 
-        room={room} 
+        room={roomData} 
         onlineCount={onlineUsers.length} 
         onlineUsers={onlineUsers}
         members={members}
-        isOwner={room.owner_id === currentUserId}
+        isOwner={roomData.owner_id === currentUserId}
         onManageRequests={() => setIsManagingRequests(true)}
         pendingCount={pendingCount}
       />
@@ -400,8 +428,17 @@ export default function ChatBox({
           {errorStatus}
         </div>
       )}
-
-      <div className="flex-1 overflow-hidden flex flex-col relative">
+ 
+      <div 
+        className="flex-1 overflow-hidden flex flex-col relative"
+        style={{
+          backgroundColor: roomData.wallpaper_color || undefined,
+          backgroundImage: roomData.wallpaper_url ? `url(${roomData.wallpaper_url})` : undefined,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
         <MessageList 
           messages={messages} 
           currentUserId={currentUserId} 

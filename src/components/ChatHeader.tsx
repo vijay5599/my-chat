@@ -6,6 +6,9 @@ import { useState, useEffect, useRef } from 'react'
 import { renameRoom } from '@/app/chat/actions'
 import { Room, Profile } from '@/types'
 import { Avatar } from './Avatar'
+import { ThemeToggle } from './ThemeToggle'
+import { WallpaperPicker } from './WallpaperPicker'
+import { Settings } from 'lucide-react'
 
 export default function ChatHeader({ 
   room, 
@@ -29,7 +32,9 @@ export default function ChatHeader({
   const [newName, setNewName] = useState(room.name)
   const [isSaving, setIsSaving] = useState(false)
   const [isOnlineList, setIsOnlineList] = useState(false)
+  const [showWallpaperPicker, setShowWallpaperPicker] = useState(false)
   const popupRef = useRef<HTMLDivElement>(null)
+  const settingsRef = useRef<HTMLDivElement>(null)
 
   // Map online IDs to profiles
   const onlineMembersList = members.filter(m => onlineUsers.includes(m.id))
@@ -48,6 +53,21 @@ export default function ChatHeader({
 
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isOnlineList])
+
+  // Handle click outside to close wallpaper picker
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+        setShowWallpaperPicker(false)
+      }
+    }
+
+    if (showWallpaperPicker) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showWallpaperPicker])
 
   // Update local name if room prop changes (e.g., from realtime update)
   useEffect(() => {
@@ -166,6 +186,31 @@ export default function ChatHeader({
             )}
           </button>
         )}
+
+        <div className="flex items-center gap-2 relative">
+          <button 
+            onClick={() => setShowWallpaperPicker(!showWallpaperPicker)}
+            className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-all text-slate-500"
+            title="Customization"
+          >
+            <Settings size={18} />
+          </button>
+
+          {showWallpaperPicker && (
+            <div ref={settingsRef} className="absolute top-full right-0 mt-2 z-50">
+              <WallpaperPicker 
+                roomId={room.id}
+                currentWallpaperColor={room.wallpaper_color}
+                currentWallpaperUrl={room.wallpaper_url}
+                onClose={() => setShowWallpaperPicker(false)}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="hidden sm:block h-6 w-[1px] bg-slate-200 dark:bg-slate-800 mx-1" />
+
+        <ThemeToggle />
 
         <div className="flex items-center gap-2 relative">
           <button 

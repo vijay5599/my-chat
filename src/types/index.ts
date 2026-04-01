@@ -15,6 +15,8 @@ export interface Room {
   name: string
   owner_id: string
   created_at: string
+  wallpaper_url?: string
+  wallpaper_color?: string
 }
 
 export interface MessageReaction {

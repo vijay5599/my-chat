@@ -212,3 +212,21 @@ export async function toggleReaction(messageId: string, emoji: string) {
     return { success: true, action: 'added', data }
   }
 }
+
+export async function updateRoomWallpaper(roomId: string, wallpaperData: { url?: string, color?: string }) {
+  const supabase = await createClient()
+  
+  const { error } = await supabase
+    .from('rooms')
+    .update({ 
+      wallpaper_url: wallpaperData.url, 
+      wallpaper_color: wallpaperData.color 
+    })
+    .eq('id', roomId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  return { success: true }
+}
