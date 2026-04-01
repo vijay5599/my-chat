@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Message, Profile } from '@/types'
+import { Message, Profile, MessageReaction } from '@/types'
 import { format } from 'date-fns'
 import clsx from 'clsx'
 import { Avatar } from './Avatar'
-import { Mic, Trash2, Eye, EyeOff, X, AlertTriangle, Reply } from 'lucide-react'
+import { Mic, Trash2, Eye, EyeOff, X, AlertTriangle, Reply, Smile } from 'lucide-react'
+import EmojiPicker from './EmojiPicker'
 
 export default function MessageList({
   messages,
@@ -13,21 +14,42 @@ export default function MessageList({
   onDeleteMessage,
   onUpdateMessage,
   onReply,
-  members
+  onToggleReaction,
+  members,
+  onlineUsers
 }: {
   messages: Message[],
   currentUserId: string,
   onDeleteMessage: (id: string, audioUrl?: string) => void,
   onUpdateMessage: (id: string, updates: Partial<Message>) => void,
   onReply: (message: Message) => void,
-  members: Profile[]
+  onToggleReaction: (messageId: string, emoji: string) => void,
+  members: Profile[],
+  onlineUsers: string[]
 }) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const [viewingMessage, setViewingMessage] = useState<Message | null>(null)
+  const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null) // messageId
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // Handle click outside to close emoji picker
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showEmojiPicker) {
+        const target = event.target as HTMLElement
+        // Check if click is outside the picker and the trigger button
+        if (!target.closest('.emoji-picker-container')) {
+          setShowEmojiPicker(null)
+        }
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showEmojiPicker])
 
   const handleCloseView = () => {
     if (viewingMessage && viewingMessage.user_id !== currentUserId) {
@@ -40,6 +62,7 @@ export default function MessageList({
     }
     setViewingMessage(null)
   }
+
 
   const renderMessageContent = (content: string) => {
     if (!content) return null
@@ -97,6 +120,7 @@ export default function MessageList({
                 url={msg.profiles?.avatar_url}
                 name={msg.profiles?.username || 'User'}
                 size="sm"
+                isOnline={onlineUsers.includes(msg.user_id)}
               />
               <div
                 className={clsx('flex flex-col min-w-0 w-full max-w-[85%] md:max-w-[73%] lg:max-w-[67%]', isMe ? 'items-end' : 'items-start')}
@@ -189,6 +213,43 @@ export default function MessageList({
                       </>
                     )}
 
+                    {/* Reactions Display */}
+                    {(msg.reactions && msg.reactions.length > 0) && (
+                      <div className={clsx(
+                        "mt-2 flex flex-wrap gap-1.5",
+                        isMe ? "justify-end" : "justify-start"
+                      )}>
+                        {Object.entries(
+                          msg.reactions.reduce((acc, r) => {
+                            acc[r.emoji] = acc[r.emoji] || []
+                            acc[r.emoji].push(r)
+                            return acc
+                          }, {} as Record<string, MessageReaction[]>)
+                        ).map(([emoji, reactions]) => {
+                          const hasReacted = reactions.some(r => r.user_id === currentUserId)
+                          return (
+                            <button
+                              key={emoji}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onToggleReaction(msg.id, emoji)
+                              }}
+                              className={clsx(
+                                "flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-all border",
+                                hasReacted
+                                  ? "bg-blue-50 dark:bg-blue-900/40 border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 shadow-sm"
+                                  : "bg-white/50 dark:bg-neutral-800/50 border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                              )}
+                              title={reactions.map(r => r.profiles?.username).join(', ')}
+                            >
+                              <span>{emoji}</span>
+                              <span className="font-bold text-[10px]">{reactions.length}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+
                     <div
                       className={clsx(
                         'text-[9px] mt-1.5 opacity-70 text-right font-medium flex items-center justify-end gap-1',
@@ -214,6 +275,35 @@ export default function MessageList({
                     >
                       <Reply size={16} className={isMe ? "" : "scale-x-[-1]"} />
                     </button>
+                    <div className="relative emoji-picker-container">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setShowEmojiPicker(showEmojiPicker === msg.id ? null : msg.id)
+                        }}
+                        className={clsx(
+                          "p-2 rounded-full transition-all active:scale-125 shadow-sm bg-white/80 dark:bg-neutral-800/80 backdrop-blur-sm border dark:border-neutral-700",
+                          showEmojiPicker === msg.id
+                            ? "text-blue-600 bg-blue-50 dark:bg-blue-900/30 border-blue-200"
+                            : "text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/30"
+                        )}
+                        title="React"
+                      >
+                        <Smile size={16} />
+                      </button>
+
+                      {showEmojiPicker === msg.id && (
+                        <EmojiPicker
+                          className={clsx("z-[110]", isMe ? "right-0" : "left-0")}
+                          onSelect={(emoji) => {
+                            onToggleReaction(msg.id, emoji)
+                            setShowEmojiPicker(null)
+                          }}
+                          onClose={() => setShowEmojiPicker(null)}
+                        />
+                      )}
+                    </div>
+
                     {isMe && !isViewed && (
                       <button
                         onClick={(e) => {

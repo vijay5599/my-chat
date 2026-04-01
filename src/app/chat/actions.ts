@@ -171,3 +171,44 @@ export async function renameRoom(roomId: string, newName: string) {
   revalidatePath(`/chat/${roomId}`)
   return { success: true }
 }
+
+export async function toggleReaction(messageId: string, emoji: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) return { error: 'Not authenticated' }
+
+  // Check if reaction already exists
+  const { data: existing } = await supabase
+    .from('message_reactions')
+    .select('id')
+    .eq('message_id', messageId)
+    .eq('user_id', user.id)
+    .eq('emoji', emoji)
+    .single()
+
+  if (existing) {
+    // Delete existing
+    const { error } = await supabase
+      .from('message_reactions')
+      .delete()
+      .eq('id', existing.id)
+
+    if (error) return { error: error.message }
+    return { success: true, action: 'removed' }
+  } else {
+    // Insert new
+    const { data, error } = await supabase
+      .from('message_reactions')
+      .insert([{
+        message_id: messageId,
+        user_id: user.id,
+        emoji
+      }])
+      .select('*, profiles(id, username, avatar_url)')
+      .single()
+
+    if (error) return { error: error.message }
+    return { success: true, action: 'added', data }
+  }
+}

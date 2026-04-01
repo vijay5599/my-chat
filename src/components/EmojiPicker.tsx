@@ -13,10 +13,12 @@ const EMOJI_CATEGORIES = [
 
 export default function EmojiPicker({ 
   onSelect, 
-  onClose 
+  onClose,
+  className
 }: { 
   onSelect: (emoji: string) => void, 
-  onClose: () => void 
+  onClose: () => void,
+  className?: string
 }) {
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState(EMOJI_CATEGORIES[0].name)
@@ -32,7 +34,10 @@ export default function EmojiPicker({
     : null
 
   return (
-    <div className="absolute bottom-full left-0 mb-4 w-72 h-96 bg-white dark:bg-neutral-900 border dark:border-neutral-800 rounded-2xl shadow-2xl z-[100] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+    <div className={clsx(
+      "absolute bottom-full mb-4 w-72 h-96 bg-white dark:bg-neutral-900 border dark:border-neutral-800 rounded-2xl shadow-2xl z-[100] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200",
+      className || "left-0"
+    )}>
       <div className="p-3 border-b dark:border-neutral-800 flex items-center justify-between">
         <h3 className="text-sm font-bold">Choose Emoji</h3>
         <button onClick={onClose} className="p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full">

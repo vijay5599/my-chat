@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Message, Profile } from '@/types'
+import { Message, Profile, MessageReaction } from '@/types'
 import { RealtimeChannel } from '@supabase/supabase-js'
 import MessageList from './MessageList'
 import MessageInput from './MessageInput'
+import { toggleReaction } from '@/app/chat/actions'
 import { usePresence } from '@/lib/hooks/usePresence'
 import { TypingAnimation } from './TypingAnimation'
 import { useNav } from './NavigationWrapper'
@@ -107,6 +108,23 @@ export default function ChatBox({
       .on('broadcast', { event: 'update_message' }, (payload) => {
         const updatedMessage = payload.payload as Message
         setMessages((prev) => prev.map(msg => msg.id === updatedMessage.id ? updatedMessage : msg))
+      })
+      .on('broadcast', { event: 'reaction_toggle' }, (payload) => {
+        const { messageId, reaction, action } = payload.payload as { messageId: string, reaction: MessageReaction, action: 'added' | 'removed' }
+        setMessages((prev) => prev.map(msg => {
+          if (msg.id !== messageId) return msg
+          const currentReactions = msg.reactions || []
+          if (action === 'added') {
+            // Check if already exists to prevent duplicates
+            if (currentReactions.some(r => r.id === reaction.id)) return msg
+            return { ...msg, reactions: [...currentReactions, reaction] }
+          } else {
+            return {
+              ...msg,
+              reactions: currentReactions.filter(r => !(r.user_id === reaction.user_id && r.emoji === reaction.emoji))
+            }
+          }
+        }))
       })
       .on('broadcast', { event: 'typing' }, (payload) => {
         const { userId, isTyping } = payload.payload
@@ -321,6 +339,43 @@ export default function ChatBox({
     }
   }
 
+  const handleToggleReaction = async (messageId: string, emoji: string) => {
+    const result = await toggleReaction(messageId, emoji)
+    
+    if (result.success) {
+      const action = result.action as 'added' | 'removed'
+      const reaction = result.data as MessageReaction || { message_id: messageId, user_id: currentUserId, emoji }
+
+      // 1. Optimistic UI
+      setMessages((prev) => prev.map(msg => {
+        if (msg.id !== messageId) return msg
+        const currentReactions = msg.reactions || []
+        if (action === 'added') {
+          return { ...msg, reactions: [...currentReactions, reaction as MessageReaction] }
+        } else {
+          return { 
+            ...msg, 
+            reactions: currentReactions.filter(r => !(r.user_id === currentUserId && r.emoji === emoji)) 
+          }
+        }
+      }))
+
+      // 2. Broadcast
+      if (channelRef.current) {
+        await channelRef.current.send({
+          type: 'broadcast',
+          event: 'reaction_toggle',
+          payload: { messageId, reaction, action }
+        })
+      }
+    } else if (result.error) {
+      console.error('Error toggling reaction:', result.error)
+      setErrorStatus(`Failed to toggle reaction: ${result.error}`)
+      setTimeout(() => setErrorStatus(null), 5000)
+    }
+  }
+
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden relative">
       <ChatHeader 
@@ -353,7 +408,9 @@ export default function ChatBox({
           onDeleteMessage={handleDeleteMessage}
           onUpdateMessage={handleUpdateMessage}
           onReply={setReplyingTo}
+          onToggleReaction={handleToggleReaction}
           members={members}
+          onlineUsers={onlineUsers}
         />
 
         <div className="px-6 py-2 min-h-[40px] flex items-center justify-between">

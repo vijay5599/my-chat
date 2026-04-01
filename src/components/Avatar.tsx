@@ -1,14 +1,16 @@
 'use client'
 
 import Image from 'next/image'
+import clsx from 'clsx'
 
 interface AvatarProps {
   url?: string | null
   name?: string | null
   size?: 'sm' | 'md' | 'lg'
+  isOnline?: boolean
 }
 
-export function Avatar({ url, name, size = 'md' }: AvatarProps) {
+export function Avatar({ url, name, size = 'md', isOnline = false }: AvatarProps) {
   const sizeClasses = {
     sm: 'w-8 h-8 text-xs',
     md: 'w-10 h-10 text-sm',
@@ -17,11 +19,11 @@ export function Avatar({ url, name, size = 'md' }: AvatarProps) {
 
   const initials = name
     ? name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase()
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase()
     : '?'
 
   const colors = [
@@ -32,7 +34,7 @@ export function Avatar({ url, name, size = 'md' }: AvatarProps) {
     'bg-pink-500',
     'bg-indigo-500'
   ]
-  
+
   // Deterministic color based on name
   const colorIndex = name ? name.length % colors.length : 0
   const bgColor = colors[colorIndex]
@@ -48,6 +50,13 @@ export function Avatar({ url, name, size = 'md' }: AvatarProps) {
         />
       ) : (
         <span>{initials}</span>
+      )}
+
+      {isOnline && (
+        <span className={clsx(
+          "absolute bottom-0 right-0 block rounded-full bg-green-500 ring-2 ring-white dark:ring-slate-900 z-10",
+          size === 'sm' ? "w-2 h-2" : size === 'lg' ? "w-4 h-4" : "w-3 h-3"
+        )} />
       )}
     </div>
   )

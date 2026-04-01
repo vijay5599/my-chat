@@ -115,7 +115,7 @@ export default async function RoomPage({ params }: { params: Promise<{ roomId: s
   // Fetch initial messages with profiles and replied message context
   const { data: messages, error: messagesError } = await supabase
     .from('messages')
-    .select('*, profiles(username, avatar_url, id), replied_message:reply_to_id(*, profiles(username, avatar_url, id))')
+    .select('*, profiles(username, avatar_url, id), reactions:message_reactions(*, profiles(username, avatar_url, id)), replied_message:reply_to_id(*, profiles(username, avatar_url, id))')
     .eq('room_id', resolvedParams.roomId)
     .order('created_at', { ascending: true })
 
