@@ -16,9 +16,20 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Pass-through for non-GET requests or requests from different origins
+  if (event.request.method !== 'GET') return;
+
   event.respondWith(
     caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+      // Return cached response if found, else fetch from network
+      return response || fetch(event.request).catch(() => {
+        // Optional: Return a custom offline page or fallback icon
+      });
     })
   );
+});
+
+// Self-activating to ensure new PWA settings apply immediately
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
 });
