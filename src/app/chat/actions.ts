@@ -230,3 +230,44 @@ export async function updateRoomWallpaper(roomId: string, wallpaperData: { url?:
 
   return { success: true }
 }
+
+export async function getDashboardStats() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) return { error: 'Not authenticated' }
+
+  // 1. Get joined rooms count
+  const { count: roomsCount } = await supabase
+    .from('room_members')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+
+  // 2. Get user's total messages
+  const { count: messagesCount } = await supabase
+    .from('messages')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+
+  // 3. Get total members in system (example of global stat)
+  const { count: totalMembers } = await supabase
+    .from('profiles')
+    .select('*', { count: 'exact', head: true })
+
+  // 4. Get recent joined rooms (last 3)
+  const { data: recentRooms } = await supabase
+    .from('room_members')
+    .select('room_id, rooms(*)')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(3)
+
+  const rooms = recentRooms?.map(r => r.rooms).filter(Boolean) || []
+
+  return {
+    roomsCount: roomsCount || 0,
+    messagesCount: messagesCount || 0,
+    totalMembers: totalMembers || 0,
+    recentRooms: rooms as any[]
+  }
+}
