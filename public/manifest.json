@@ -3,6 +3,8 @@
   "short_name": "MyChat",
   "description": "Fully featured, real-time premium chat application.",
   "start_url": "/chat",
+  "id": "/chat",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#3b82f6",

@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Room } from '@/types'
 import { usePathname } from 'next/navigation'
 import NotificationToast from './NotificationToast'
+import { Menu } from 'lucide-react'
 
 interface NavContextType {
   isSidebarOpen: boolean
@@ -118,18 +119,36 @@ export default function NavigationWrapper({
         {/* Sidebar Container */}
         <div 
           className={clsx(
-            "h-full z-50 transition-all duration-300 ease-in-out bg-white dark:bg-neutral-800 overflow-hidden shrink-0",
+            "h-full z-50 transition-all duration-300 ease-in-out bg-white dark:bg-neutral-800 shrink-0",
             isMobile
-              ? "fixed left-0 top-0 bottom-0 shadow-2xl w-[min(18rem,calc(100%-1.5rem))]"
-              : "relative border-r dark:border-neutral-700",
-            isSidebarOpen ? "w-72" : "w-0 border-none"
+              ? [
+                  "fixed left-0 top-0 bottom-0 shadow-2xl w-[min(18rem,calc(100%-1.5rem))]",
+                  isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+                ]
+              : [
+                  "relative border-r dark:border-neutral-700 overflow-hidden",
+                  isSidebarOpen ? "w-72 opacity-100" : "w-0 opacity-0 border-none invisible"
+                ]
           )}
         >
-          {sidebar}
+          {/* Ensure content inside doesn't shrink on desktop */}
+          <div className="w-72 h-full">
+            {sidebar}
+          </div>
         </div>
 
         {/* Main Content */}
         <main className="flex-1 flex flex-col h-full bg-white dark:bg-black relative z-10 overflow-hidden">
+          {/* Desktop Toggle Button (Only visible when sidebar is closed) */}
+          {!isMobile && !isSidebarOpen && (
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="absolute left-4 top-4 z-50 p-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-all group animate-in slide-in-from-left duration-300"
+              title="Expand Sidebar"
+            >
+              <Menu size={20} className="text-neutral-500 group-hover:text-blue-600 transition-colors" />
+            </button>
+          )}
           {children}
         </main>
 
