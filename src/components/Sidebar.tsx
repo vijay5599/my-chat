@@ -14,14 +14,14 @@ import clsx from 'clsx'
 import { useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-export default function Sidebar({ 
-  rooms, 
+export default function Sidebar({
+  rooms,
   userEmail,
   profile,
   joinedRoomIds = [],
   joinRequests = []
-}: { 
-  rooms: Room[], 
+}: {
+  rooms: Room[],
   userEmail?: string,
   profile?: Profile | null,
   joinedRoomIds?: string[],
@@ -34,7 +34,7 @@ export default function Sidebar({
   const [roomName, setRoomName] = useState('')
   const [search, setSearch] = useState('')
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
-  
+
   // Realtime rooms state
   const [localRooms, setLocalRooms] = useState<Room[]>(rooms)
   const supabase = useMemo(() => createClient(), [])
@@ -48,10 +48,10 @@ export default function Sidebar({
   useEffect(() => {
     const channel = supabase
       .channel('sidebar-rooms')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'rooms' 
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'rooms'
       }, (payload) => {
         if (payload.eventType === 'INSERT') {
           setLocalRooms(prev => [payload.new as Room, ...prev])
@@ -81,12 +81,12 @@ export default function Sidebar({
   const handleDeleteRoom = async (e: React.MouseEvent, roomId: string) => {
     e.preventDefault()
     e.stopPropagation()
-    
+
     if (!confirm('Are you sure you want to delete this room? This will remove all messages.')) return
 
     setIsDeleting(roomId)
     const { error } = await deleteRoom(roomId)
-    
+
     if (error) {
       alert(`Failed to delete room: ${error}`)
     } else {
@@ -101,24 +101,24 @@ export default function Sidebar({
   const filteredRooms = localRooms.filter(r => r.name.toLowerCase().includes(search.toLowerCase()))
 
   return (
-    <div className="w-full bg-white/80 dark:bg-slate-900/80 border-r border-white/30 dark:border-slate-700/70 shadow-[var(--card-shadow)] backdrop-blur-xl flex flex-col h-full">
+    <div className="w-72 flex flex-col h-full bg-white dark:bg-slate-900 shadow-[var(--card-shadow)]">
       <div className="p-4 border-b border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between bg-white/80 dark:bg-slate-900/70 backdrop-blur-sm">
         <h2 className="font-bold text-lg text-slate-700 dark:text-slate-100 tracking-tight">Chats</h2>
         <div className="flex items-center gap-1">
           <button onClick={() => setIsCreating(true)} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors" title="Create Room">
-            <PlusCircle size={18} />
+            <PlusCircle size={18} color='grey' />
           </button>
           {!isMobile ? (
-            <button 
-              onClick={() => setIsSidebarOpen(false)} 
+            <button
+              onClick={() => setIsSidebarOpen(false)}
               className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
               title="Collapse Sidebar"
             >
               <PanelLeftClose size={18} />
             </button>
           ) : (
-            <button 
-              onClick={() => setIsSidebarOpen(false)} 
+            <button
+              onClick={() => setIsSidebarOpen(false)}
               className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors"
             >
               <X size={20} />
@@ -174,14 +174,14 @@ export default function Sidebar({
           <p className="text-sm text-neutral-500 text-center py-4">No rooms found</p>
         ) : (
           <ul className="space-y-1">
-              {filteredRooms.map(room => {
-                const isActive = pathname === `/chat/${room.id}`
-                const isJoined = joinedRoomIds.includes(room.id)
-                const isPending = joinRequests.some(req => req.room_id === room.id && req.status === 'pending')
-                
-                // Fallback: If no owner is assigned yet, allow current user to delete if they are likely the owner 
-                // or just show it so they can clean up existing rooms.
-                const isOwner = room.owner_id === profile?.id || !room.owner_id
+            {filteredRooms.map(room => {
+              const isActive = pathname === `/chat/${room.id}`
+              const isJoined = joinedRoomIds.includes(room.id)
+              const isPending = joinRequests.some(req => req.room_id === room.id && req.status === 'pending')
+
+              // Fallback: If no owner is assigned yet, allow current user to delete if they are likely the owner 
+              // or just show it so they can clean up existing rooms.
+              const isOwner = room.owner_id === profile?.id || !room.owner_id
 
               return (
                 <li key={room.id} className="group/item relative">
@@ -197,15 +197,15 @@ export default function Sidebar({
                     }}
                     className={clsx(
                       "flex items-center px-3 py-2 rounded-md transition duration-200 pr-10",
-                      isActive 
-                        ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 ring-1 ring-blue-500/20" 
+                      isActive
+                        ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 ring-1 ring-blue-500/20"
                         : "hover:bg-neutral-200 dark:hover:bg-neutral-700"
                     )}
                   >
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate flex items-center gap-1.5">
                         {!isJoined && (
-                          isPending 
+                          isPending
                             ? <Clock size={12} className="text-yellow-500" />
                             : <Lock size={12} className="text-neutral-400" />
                         )}
@@ -248,9 +248,9 @@ export default function Sidebar({
             <LogOut size={16} />
           </button>
         </div>
-        
-        <Link 
-          href="/profile" 
+
+        <Link
+          href="/profile"
           className="flex items-center gap-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
         >
           <Settings size={14} />

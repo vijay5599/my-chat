@@ -216,6 +216,7 @@ export default function ChatHeader({
           <button 
             onClick={handleOnlineList}
             className="flex items-center gap-2 px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-all group"
+            title="View online members"
           >
             <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
             <span className="text-xs font-semibold text-neutral-600 dark:text-neutral-400 group-hover:text-blue-500 transition-colors">

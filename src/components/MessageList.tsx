@@ -137,7 +137,7 @@ export default function MessageList({
                           ? (isViewed
                             ? 'bg-neutral-50 dark:bg-neutral-900/50 text-neutral-400 border border-neutral-200 dark:border-neutral-800 rounded-tl-none italic'
                             : 'bg-amber-100 dark:bg-amber-900/30 border-2 border-amber-400/50 text-amber-900 dark:text-amber-100 rounded-tl-none cursor-pointer hover:scale-[1.02] active:scale-[0.98]')
-                          : 'bg-neutral-200 dark:bg-neutral-800 text-foreground rounded-tl-none')
+                          : 'bg-white/90 dark:bg-neutral-800/90 text-slate-800 dark:text-slate-100 rounded-tl-none border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm')
                     )}
                     onClick={() => isViewOnce && !isMe && !isViewed && setViewingMessage(msg)}
                   >

@@ -116,13 +116,15 @@ export default function NavigationWrapper({
         )}
 
         {/* Sidebar Container */}
-        <div className={clsx(
-          "h-full z-50 transition-all duration-300 ease-in-out bg-white dark:bg-neutral-800",
-          isMobile
-            ? "fixed left-0 top-0 bottom-0 shadow-2xl w-[min(18rem,calc(100%-1.5rem))]"
-            : "relative border-r dark:border-neutral-700 w-72",
-          !isSidebarOpen && (isMobile ? "-translate-x-full" : "w-0 overflow-hidden border-none")
-        )}>
+        <div 
+          className={clsx(
+            "h-full z-50 transition-all duration-300 ease-in-out bg-white dark:bg-neutral-800 overflow-hidden shrink-0",
+            isMobile
+              ? "fixed left-0 top-0 bottom-0 shadow-2xl w-[min(18rem,calc(100%-1.5rem))]"
+              : "relative border-r dark:border-neutral-700",
+            isSidebarOpen ? "w-72" : "w-0 border-none"
+          )}
+        >
           {sidebar}
         </div>
 

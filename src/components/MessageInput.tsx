@@ -245,6 +245,7 @@ export default function MessageInput({
                 "w-10 h-10 rounded-full text-sm font-medium disabled:opacity-50 transition-all shadow-sm active:scale-95 flex items-center justify-center",
                 isViewOnce ? "bg-amber-600 hover:bg-amber-700 text-white" : "bg-blue-600 hover:bg-blue-700 text-white"
               )}
+              title="Send message"
             >
               <Send size={16} />
             </button>
