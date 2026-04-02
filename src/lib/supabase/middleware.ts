@@ -60,8 +60,13 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   const isAuthRoute = request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/signup')
+  const isPublicAsset = request.nextUrl.pathname.startsWith('/manifest.json') || 
+                        request.nextUrl.pathname.startsWith('/sw.js') ||
+                        request.nextUrl.pathname.endsWith('.png') ||
+                        request.nextUrl.pathname.endsWith('.ico')
 
-  if (!user && !isAuthRoute) {
+  if (!user && !isAuthRoute && !isPublicAsset) {
+
     // Redirect unauthenticated users to login page
     const url = request.nextUrl.clone()
     url.pathname = '/login'
