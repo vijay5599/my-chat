@@ -1,3 +1,4 @@
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
@@ -17,11 +18,19 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized access.' }, { status: 401 })
     }
 
-    const supabase = await createClient()
     const now = new Date().toISOString()
     
     // 1. Diagnostics: Log server time
     console.log(`[Worker] Server time is currently: ${now}`)
+
+    // 2. Use Service Role Client to bypass RLS for administrative tasks
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    
+    // Create an admin client if we have the key, otherwise use the standard server client
+    const supabase = (serviceRoleKey && supabaseUrl) 
+      ? createAdminClient(supabaseUrl, serviceRoleKey)
+      : await createClient()
 
     // 2. Fetch all pending messages (even future ones) for debug info
     const { data: allPending } = await supabase
