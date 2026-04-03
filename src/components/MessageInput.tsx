@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Mic, Eye, EyeOff, Smile, Send, X, Clock } from 'lucide-react'
+import { Mic, Eye, EyeOff, Smile, Send, X, Clock, Plus } from 'lucide-react'
 import EmojiPicker from './EmojiPicker'
 import { Profile, Message } from '@/types'
 import { Avatar } from './Avatar'
@@ -33,6 +33,7 @@ export default function MessageInput({
   const [mentionSearch, setMentionSearch] = useState<string | null>(null)
   const [cursorPosition, setCursorPosition] = useState(0)
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false)
+  const [showMoreActions, setShowMoreActions] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const emojiPickerRef = useRef<HTMLDivElement>(null)
@@ -191,57 +192,112 @@ export default function MessageInput({
               />
             </div>
           )}
-          <form onSubmit={handleSubmit} className="flex gap-2 items-center">
-            <button
-              type="button"
-              onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
-              className={clsx(
-                "w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200",
-                isEmojiPickerOpen
-                  ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                  : "text-neutral-500 hover:text-blue-600 hover:bg-neutral-100 dark:hover:bg-neutral-900"
-              )}
-              title="Emojis"
-            >
-              <Smile size={18} />
-            </button>
+          <form onSubmit={handleSubmit} className="flex gap-2 items-center relative">
+            <div className="flex items-center">
+              <button
+                type="button"
+                onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
+                className={clsx(
+                  "w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200 flex-shrink-0",
+                  isEmojiPickerOpen
+                    ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                    : "text-neutral-500 hover:text-blue-600 hover:bg-neutral-100 dark:hover:bg-neutral-900"
+                )}
+                title="Emojis"
+              >
+                <Smile size={20} />
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setIsVoiceRecording(true)}
-              className="w-10 h-10 flex items-center justify-center text-neutral-500 hover:text-blue-600 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-full transition-colors"
-              title="Voice Message"
-            >
-              <Mic size={18} />
-            </button>
+              <div className="relative flex items-center">
+                <button
+                  type="button"
+                  onClick={() => setShowMoreActions(!showMoreActions)}
+                  className={clsx(
+                    "w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200 flex-shrink-0 sm:hidden",
+                    showMoreActions
+                      ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600"
+                      : "text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-900"
+                  )}
+                  title="More actions"
+                >
+                  <Plus size={20} className={clsx("transition-transform duration-300", showMoreActions && "rotate-45")} />
+                </button>
 
-            <button
-              type="button"
-              onClick={() => setIsViewOnce(!isViewOnce)}
-              className={clsx(
-                "w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200",
-                isViewOnce
-                  ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 shadow-sm"
-                  : "text-neutral-500 hover:text-amber-600 hover:bg-neutral-100 dark:hover:bg-neutral-900"
-              )}
-              title={isViewOnce ? "View Once Active" : "Set as View Once"}
-            >
-              {isViewOnce ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
+                {/* Extra Actions Sub-bar (Mobile) */}
+                <div className={clsx(
+                  "absolute bottom-full left-0 mb-3 flex gap-2 p-1.5 bg-white dark:bg-neutral-900 border dark:border-neutral-800 rounded-2xl shadow-xl transition-all duration-300 sm:hidden z-[60]",
+                  showMoreActions ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-4 scale-95 pointer-events-none"
+                )}>
+                  <button
+                    type="button"
+                    onClick={() => { setIsVoiceRecording(true); setShowMoreActions(false); }}
+                    className="w-10 h-10 flex items-center justify-center text-neutral-500 hover:text-blue-600 bg-neutral-50 dark:bg-neutral-800 rounded-xl"
+                  >
+                    <Mic size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setIsViewOnce(!isViewOnce); setShowMoreActions(false); }}
+                    className={clsx(
+                      "w-10 h-10 flex items-center justify-center rounded-xl",
+                      isViewOnce ? "bg-amber-100 text-amber-600" : "bg-neutral-50 dark:bg-neutral-800 text-neutral-500"
+                    )}
+                  >
+                    {isViewOnce ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setIsScheduleModalOpen(true); setShowMoreActions(false); }}
+                    className={clsx(
+                      "w-10 h-10 flex items-center justify-center rounded-xl",
+                      isScheduleModalOpen ? "bg-purple-100 text-purple-600" : "bg-neutral-50 dark:bg-neutral-800 text-neutral-500"
+                    )}
+                  >
+                    <Clock size={18} />
+                  </button>
+                </div>
 
-            <button
-              type="button"
-              onClick={() => setIsScheduleModalOpen(true)}
-              className={clsx(
-                "w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200",
-                isScheduleModalOpen
-                  ? "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 shadow-sm"
-                  : "text-neutral-500 hover:text-purple-600 hover:bg-neutral-100 dark:hover:bg-neutral-900"
-              )}
-              title="Schedule Message"
-            >
-              <Clock size={18} />
-            </button>
+                {/* Desktop View Action Icons */}
+                <div className="hidden sm:flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => setIsVoiceRecording(true)}
+                    className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-blue-600 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-full transition-colors"
+                    title="Voice Message"
+                  >
+                    <Mic size={18} />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsViewOnce(!isViewOnce)}
+                    className={clsx(
+                      "w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200",
+                      isViewOnce
+                        ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
+                        : "text-neutral-500 hover:text-amber-600 hover:bg-neutral-100 dark:hover:bg-neutral-900"
+                    )}
+                    title="View Once"
+                  >
+                    {isViewOnce ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsScheduleModalOpen(true)}
+                    className={clsx(
+                      "w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200",
+                      isScheduleModalOpen
+                        ? "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400"
+                        : "text-neutral-500 hover:text-purple-600 hover:bg-neutral-100 dark:hover:bg-neutral-900"
+                    )}
+                    title="Schedule"
+                  >
+                    <Clock size={18} />
+                  </button>
+                </div>
+              </div>
+            </div>
 
             <input
               ref={inputRef}
@@ -260,7 +316,7 @@ export default function MessageInput({
               type="submit"
               disabled={!content.trim()}
               className={clsx(
-                "w-10 h-10 rounded-full text-sm font-medium disabled:opacity-50 transition-all shadow-sm active:scale-95 flex items-center justify-center",
+                "w-10 h-10 flex-shrink-0 rounded-full text-sm font-medium disabled:opacity-50 transition-all shadow-sm active:scale-95 flex items-center justify-center",
                 isViewOnce ? "bg-amber-600 hover:bg-amber-700 text-white" : "bg-blue-600 hover:bg-blue-700 text-white"
               )}
               title="Send message"
