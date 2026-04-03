@@ -120,6 +120,12 @@ export default function MessageInput({
   }
 
   useEffect(() => {
+    if (replyingTo && inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [replyingTo])
+
+  useEffect(() => {
     return () => {
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
     }

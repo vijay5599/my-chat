@@ -15,19 +15,23 @@ export default async function ChatLayout({
     redirect('/login')
   }
 
-  // Fetch rooms (including members for DM profile display)
-  const { data: allRooms } = await supabase
-    .from('rooms')
-    .select('*, room_members(user_id, profiles(*))')
-    .order('created_at', { ascending: false })
-
-  // Fetch current user memberships
+  // Fetch rooms: 
+  // 1. All group rooms (publicly browseable)
+  // 2. Only direct rooms where the user is a member
+  // Let's first get the user's room IDs
   const { data: userMemberships } = await supabase
     .from('room_members')
     .select('room_id')
     .eq('user_id', user.id)
 
   const joinedRoomIds = userMemberships?.map(m => m.room_id) || []
+
+  // Fetch all rooms that are either 'group' OR are in the user's joined list (which covers their DMs)
+  const { data: allRooms } = await supabase
+    .from('rooms')
+    .select('*, room_members(user_id, profiles(*))')
+    .or(`type.eq.group,id.in.(${joinedRoomIds.length > 0 ? joinedRoomIds.join(',') : '00000000-0000-0000-0000-000000000000'})`)
+    .order('created_at', { ascending: false })
 
   // Fetch current user's join requests
   const { data: userRequests } = await supabase

@@ -1,12 +1,21 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Message, Profile, MessageReaction } from '@/types'
 import { format } from 'date-fns'
 import clsx from 'clsx'
 import { Avatar } from './Avatar'
 import { Mic, Trash2, Eye, EyeOff, X, AlertTriangle, Reply, Smile } from 'lucide-react'
 import EmojiPicker from './EmojiPicker'
+
+const isEmojiOnly = (str: string) => {
+  // Simple check for single emoji (including multi-char ones like family)
+  // Most emojis are within a certain range, but we can also just check if it's one 'grapheme'
+  const emojiRegex = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g;
+  const matches = str.match(emojiRegex);
+  return matches && matches.length === 1 && str.trim() === matches[0];
+};
 
 export default function MessageList({
   messages,
@@ -64,8 +73,22 @@ export default function MessageList({
   }
 
 
-  const renderMessageContent = (content: string) => {
+  const renderMessageContent = (content: string, isMe: boolean) => {
     if (!content) return null
+
+    if (isEmojiOnly(content)) {
+      return (
+        <motion.div
+          initial={{ scale: 0.5, rotate: -10, opacity: 0 }}
+          animate={{ scale: 1.1, rotate: 0, opacity: 1 }}
+          whileHover={{ scale: 1.3, rotate: 5 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+          className="text-5xl py-2 select-none cursor-default"
+        >
+          {content}
+        </motion.div>
+      )
+    }
 
     // Regex to match @username (stopping at space or end of string)
     const mentionRegex = /@(\w+)/g
@@ -209,7 +232,7 @@ export default function MessageList({
                             />
                           </div>
                         )}
-                        {msg.content && renderMessageContent(msg.content)}
+                        {msg.content && renderMessageContent(msg.content, isMe)}
                       </>
                     )}
 
@@ -370,7 +393,7 @@ export default function MessageList({
                     />
                   </div>
                 )}
-                {viewingMessage.content && renderMessageContent(viewingMessage.content)}
+                {viewingMessage.content && renderMessageContent(viewingMessage.content, viewingMessage.user_id === currentUserId)}
               </div>
 
               <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs font-semibold bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-200 dark:border-amber-900/30">

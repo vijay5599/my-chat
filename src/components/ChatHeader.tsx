@@ -180,7 +180,7 @@ export default function ChatHeader({
             {isOwner && onManageRequests && (
               <button
                 onClick={onManageRequests}
-                className="p-2 sm:px-3 sm:py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg sm:text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all relative border border-transparent sm:border-blue-100 dark:sm:border-blue-900/30"
+                className="p-2 sm:px-3 sm:py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg sm:text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all relative border border-transparent sm:border-blue-100 dark:sm:border-blue-900/30 flex items-center justify-center"
                 title="Manage join requests"
               >
                 <Users size={16} className="sm:w-[14px] sm:h-[14px]" />
@@ -195,7 +195,7 @@ export default function ChatHeader({
 
             <button
               onClick={onManageScheduled}
-              className="p-2 sm:px-3 sm:py-1.5 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-lg sm:text-xs font-semibold hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-all border border-transparent sm:border-purple-100 dark:sm:border-purple-900/30"
+              className="p-2 sm:px-3 sm:py-1.5 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-lg sm:text-xs font-semibold hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-all border border-transparent sm:border-purple-100 dark:sm:border-purple-900/30 flex items-center justify-center"
               title="Scheduled Messages"
             >
               <Clock size={16} className="sm:w-[14px] sm:h-[14px]" />
