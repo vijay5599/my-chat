@@ -93,24 +93,44 @@ export default function ChatBox({
     }
     fetchProfile()
 
-    // Subscribe to new messages via WebSocket Broadcast (bypassing the database trigger)
+    // Subscribe to messages via REALTIME (Postgres Changes)
+    // This allows both manual and scheduled messages to show up instantly!
     const channel = supabase
       .channel(`realtime:messages:${roomId}`)
-      .on('broadcast', { event: 'new_message' }, (payload) => {
-        const newMessage = payload.payload as Message
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'messages',
+        filter: `room_id=eq.${roomId}`
+      }, (payload) => {
+        const newMessage = payload.new as Message
         
-        // Play "pop" sound for incoming messages
-        if (newMessage.user_id !== currentUserId) {
-          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3')
-          audio.volume = 0.5
-          audio.play().catch(e => console.log('Audio play failed:', e))
-        }
+        // Fetch profile and other details since the DB record has IDs only
+        // This makes sure the UI shows the username and avatar correctly
+        const fetchMessageWithProfile = async () => {
+          const { data } = await supabase
+            .from('messages')
+            .select('*, profiles(username, avatar_url, id), reactions:message_reactions(*, profiles(username, avatar_url, id)), replied_message:reply_to_id(*, profiles(username, avatar_url, id))')
+            .eq('id', newMessage.id)
+            .single()
 
-        setMessages((prev) => {
-          // Prevent exact duplicate inserts
-          if (prev.some(msg => msg.id === newMessage.id)) return prev
-          return [...prev, newMessage]
-        })
+          if (data) {
+            const finalMessage = data as Message
+            // Play "pop" sound for incoming messages (not from self)
+            if (finalMessage.user_id !== currentUserId) {
+              const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3')
+              audio.volume = 0.5
+              audio.play().catch(e => console.log('Audio play failed:', e))
+            }
+
+            setMessages((prev) => {
+              if (prev.some(msg => msg.id === finalMessage.id)) return prev
+              return [...prev, finalMessage]
+            })
+          }
+        }
+        
+        fetchMessageWithProfile()
       })
       .on('broadcast', { event: 'delete_message' }, (payload) => {
         const { messageId } = payload.payload
