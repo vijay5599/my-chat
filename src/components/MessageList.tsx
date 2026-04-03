@@ -123,9 +123,9 @@ export default function MessageList({
                 isOnline={onlineUsers.includes(msg.user_id)}
               />
               <div
-                className={clsx('flex flex-col min-w-0 w-full max-w-[92%] sm:max-w-[85%] md:max-w-[73%] lg:max-w-[67%]', isMe ? 'items-end' : 'items-start')}
+                className={clsx('flex flex-col min-w-0 w-full max-w-[80%] sm:max-w-[85%] md:max-w-[73%] lg:max-w-[67%]', isMe ? 'items-end' : 'items-start')}
               >
-                <div className={clsx('flex items-center gap-2', isMe ? 'flex-row-reverse' : 'flex-row')}>
+                <div className={clsx('flex items-center gap-x-2 gap-y-1 flex-wrap', isMe ? 'flex-row-reverse' : 'flex-row')}>
                   <div
                     className={clsx(
                       'rounded-2xl px-4 py-2 text-sm relative transition-all duration-200 shadow-sm break-words whitespace-pre-wrap overflow-hidden min-w-0 flex-shrink',
@@ -205,7 +205,7 @@ export default function MessageList({
                             <audio
                               src={msg.audio_url}
                               controls
-                              className="w-[280px] sm:w-[320px] max-w-full outline-none"
+                              className="w-[200px] sm:w-[280px] md:w-[320px] max-w-full outline-none"
                             />
                           </div>
                         )}
