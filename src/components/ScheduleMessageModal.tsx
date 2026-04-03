@@ -42,8 +42,12 @@ export default function ScheduleMessageModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!content.trim() || !scheduledTime) return
-    onSchedule(content, formatToLocalISO(scheduledTime))
-    console.log("Scheduled message:", content, scheduledTime, formatToLocalISO(scheduledTime))
+    
+    // Use the standard ISO format which handled timezones correctly for databases
+    const isoDate = new Date(scheduledTime).toISOString()
+    onSchedule(content, isoDate)
+    
+    console.log("Scheduled message:", content, isoDate)
     onClose()
   }
 

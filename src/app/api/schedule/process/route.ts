@@ -18,13 +18,24 @@ export async function GET(request: Request) {
     }
 
     const supabase = await createClient()
+    const now = new Date().toISOString()
+    
+    // 1. Diagnostics: Log server time
+    console.log(`[Worker] Server time is currently: ${now}`)
 
-    // 1. Fetch pending messages that are now due (scheduled_for <= now)
+    // 2. Fetch all pending messages (even future ones) for debug info
+    const { data: allPending } = await supabase
+      .from('scheduled_messages')
+      .select('id, scheduled_for')
+      .eq('status', 'pending')
+
+    // 3. Fetch messages that are actually due
     const { data: messages, error: fetchError } = await supabase
       .from('scheduled_messages')
       .select('*')
       .eq('status', 'pending')
-      .lte('scheduled_for', new Date().toISOString())
+      .lte('scheduled_for', now)
+      .order('scheduled_for', { ascending: true })
 
     if (fetchError) {
       console.error('Error fetching scheduled messages:', fetchError)
@@ -32,7 +43,12 @@ export async function GET(request: Request) {
     }
 
     if (!messages || messages.length === 0) {
-      return NextResponse.json({ status: 'No messages due for scheduling at this time.' })
+      return NextResponse.json({ 
+        status: 'No messages due for scheduling.',
+        server_time: now,
+        pending_count: allPending?.length || 0,
+        next_due: allPending && allPending.length > 0 ? allPending[0].scheduled_for : 'none'
+      })
     }
 
     console.log(`Processing ${messages.length} scheduled messages...`)
