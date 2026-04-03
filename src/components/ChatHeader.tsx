@@ -17,6 +17,7 @@ export default function ChatHeader({
   members = [],
   isOwner, 
   onManageRequests,
+  onManageScheduled,
   pendingCount = 0
 }: { 
   room: Room, 
@@ -25,6 +26,7 @@ export default function ChatHeader({
   members?: Profile[],
   isOwner?: boolean,
   onManageRequests?: () => void,
+  onManageScheduled?: () => void,
   pendingCount?: number
 }) {
   const { isSidebarOpen, setIsSidebarOpen, isMobile } = useNav()
@@ -186,6 +188,15 @@ export default function ChatHeader({
             )}
           </button>
         )}
+
+        <button 
+          onClick={onManageScheduled}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-lg text-xs font-semibold hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-all border border-purple-100 dark:border-purple-900/30 shadow-sm"
+          title="Scheduled Messages"
+        >
+          <Clock size={14} />
+          <span className="hidden sm:inline">Scheduled</span>
+        </button>
 
         <div className="flex items-center gap-2 relative">
           <button 

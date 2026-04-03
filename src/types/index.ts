@@ -43,6 +43,17 @@ export interface Message {
   reactions?: MessageReaction[]
 }
 
+export interface ScheduledMessage {
+  id: string
+  room_id: string
+  user_id: string
+  content: string
+  scheduled_for: string
+  sent_at: string | null
+  status: 'pending' | 'sent' | 'failed'
+  created_at: string
+}
+
 export interface RoomMember {
   id: string
   room_id: string

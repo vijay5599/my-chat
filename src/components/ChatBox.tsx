@@ -6,7 +6,7 @@ import { Message, Profile, MessageReaction } from '@/types'
 import { RealtimeChannel } from '@supabase/supabase-js'
 import MessageList from './MessageList'
 import MessageInput from './MessageInput'
-import { toggleReaction } from '@/app/chat/actions'
+import { toggleReaction, scheduleMessage } from '@/app/chat/actions'
 import { usePresence } from '@/lib/hooks/usePresence'
 import { TypingAnimation } from './TypingAnimation'
 import { useNav } from './NavigationWrapper'
@@ -16,6 +16,7 @@ import { useNav } from './NavigationWrapper'
 import ChatHeader from './ChatHeader'
 import { Room } from '@/types'
 import JoinRequestsManager from './JoinRequestsManager'
+import ScheduledMessagesManager from './ScheduledMessagesManager'
 
 export default function ChatBox({
   initialMessages,
@@ -40,6 +41,7 @@ export default function ChatBox({
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
   const channelRef = useRef<RealtimeChannel | null>(null)
   const [isManagingRequests, setIsManagingRequests] = useState(false)
+  const [isManagingScheduled, setIsManagingScheduled] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
   const [replyingTo, setReplyingTo] = useState<Message | null>(null)
   const [roomData, setRoomData] = useState<Room>(room)
@@ -403,6 +405,18 @@ export default function ChatBox({
     }
   }
 
+  const handleScheduleMessage = async (content: string, scheduledFor: string) => {
+    const result = await scheduleMessage(roomId, content, scheduledFor)
+    
+    if (result.success) {
+      setErrorStatus(`Success: Message scheduled for ${new Date(scheduledFor).toLocaleString()}`)
+      setTimeout(() => setErrorStatus(null), 5000)
+    } else if (result.error) {
+       setErrorStatus(`Failed to schedule: ${result.error}`)
+       setTimeout(() => setErrorStatus(null), 5000)
+    }
+  }
+
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden relative">
@@ -413,6 +427,7 @@ export default function ChatBox({
         members={members}
         isOwner={roomData.owner_id === currentUserId}
         onManageRequests={() => setIsManagingRequests(true)}
+        onManageScheduled={() => setIsManagingScheduled(true)}
         pendingCount={pendingCount}
       />
       
@@ -420,6 +435,13 @@ export default function ChatBox({
         <JoinRequestsManager 
           roomId={roomId} 
           onClose={() => setIsManagingRequests(false)} 
+        />
+      )}
+
+      {isManagingScheduled && (
+        <ScheduledMessagesManager
+          roomId={roomId}
+          onClose={() => setIsManagingScheduled(false)}
         />
       )}
       
@@ -466,6 +488,7 @@ export default function ChatBox({
 
       <MessageInput 
         onSendMessage={handleSendMessage} 
+        onScheduleMessage={handleScheduleMessage}
         onTyping={handleTyping} 
         members={members}
         currentUserId={currentUserId}

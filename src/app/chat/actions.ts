@@ -271,3 +271,58 @@ export async function getDashboardStats() {
     recentRooms: rooms as any[]
   }
 }
+
+export async function scheduleMessage(roomId: string, content: string, scheduledFor: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data, error } = await supabase
+    .from('scheduled_messages')
+    .insert([{
+      room_id: roomId,
+      user_id: user.id,
+      content,
+      scheduled_for: scheduledFor,
+      status: 'pending'
+    }])
+    .select()
+    .single()
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  return { success: true, data }
+}
+
+export async function getScheduledMessages(roomId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data, error } = await supabase
+    .from('scheduled_messages')
+    .select('*')
+    .eq('room_id', roomId)
+    .eq('user_id', user.id)
+    .eq('status', 'pending')
+    .order('scheduled_for', { ascending: true })
+
+  if (error) return { error: error.message }
+  return { data }
+}
+
+export async function cancelScheduledMessage(id: string) {
+  const supabase = await createClient()
+  
+  const { error } = await supabase
+    .from('scheduled_messages')
+    .delete()
+    .eq('id', id)
+
+  if (error) return { error: error.message }
+  return { success: true }
+}
