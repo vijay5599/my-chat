@@ -1,15 +1,17 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Mic, Eye, EyeOff, Smile, Send, X } from 'lucide-react'
+import { Mic, Eye, EyeOff, Smile, Send, X, Clock } from 'lucide-react'
 import EmojiPicker from './EmojiPicker'
 import { Profile, Message } from '@/types'
 import { Avatar } from './Avatar'
 import VoiceRecorder from './VoiceRecorder'
+import ScheduleMessageModal from './ScheduleMessageModal'
 import clsx from 'clsx'
 
 export default function MessageInput({ 
   onSendMessage, 
+  onScheduleMessage,
   onTyping,
   members,
   currentUserId,
@@ -17,6 +19,7 @@ export default function MessageInput({
   onCancelReply
 }: { 
   onSendMessage: (content: string, audioBlob?: Blob, isViewOnce?: boolean) => void,
+  onScheduleMessage: (content: string, scheduledFor: string) => void,
   onTyping: (isTyping: boolean) => void,
   members: Profile[],
   currentUserId: string,
@@ -26,6 +29,7 @@ export default function MessageInput({
   const [content, setContent] = useState('')
   const [isVoiceRecording, setIsVoiceRecording] = useState(false)
   const [isViewOnce, setIsViewOnce] = useState(false)
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
   const [mentionSearch, setMentionSearch] = useState<string | null>(null)
   const [cursorPosition, setCursorPosition] = useState(0)
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false)
@@ -225,6 +229,20 @@ export default function MessageInput({
               {isViewOnce ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
 
+            <button
+              type="button"
+              onClick={() => setIsScheduleModalOpen(true)}
+              className={clsx(
+                "w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200",
+                isScheduleModalOpen
+                  ? "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 shadow-sm"
+                  : "text-neutral-500 hover:text-purple-600 hover:bg-neutral-100 dark:hover:bg-neutral-900"
+              )}
+              title="Schedule Message"
+            >
+              <Clock size={18} />
+            </button>
+
             <input
               ref={inputRef}
               type="text"
@@ -254,6 +272,16 @@ export default function MessageInput({
             <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium px-12 animate-in fade-in slide-in-from-top-1 duration-200">
               Message will disappear after one view.
             </p>
+          )}
+
+          {isScheduleModalOpen && (
+            <ScheduleMessageModal 
+              onClose={() => setIsScheduleModalOpen(false)}
+              onSchedule={(msgContent, scheduledFor) => {
+                onScheduleMessage(msgContent, scheduledFor)
+                setIsScheduleModalOpen(false)
+              }}
+            />
           )}
         </div>
       )}

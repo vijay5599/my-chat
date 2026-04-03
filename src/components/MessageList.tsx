@@ -123,12 +123,12 @@ export default function MessageList({
                 isOnline={onlineUsers.includes(msg.user_id)}
               />
               <div
-                className={clsx('flex flex-col min-w-0 w-full max-w-[85%] md:max-w-[73%] lg:max-w-[67%]', isMe ? 'items-end' : 'items-start')}
+                className={clsx('flex flex-col min-w-0 w-full max-w-[92%] sm:max-w-[85%] md:max-w-[73%] lg:max-w-[67%]', isMe ? 'items-end' : 'items-start')}
               >
                 <div className={clsx('flex items-center gap-2', isMe ? 'flex-row-reverse' : 'flex-row')}>
                   <div
                     className={clsx(
-                      'rounded-2xl px-4 py-2 text-sm relative transition-all duration-200 shadow-sm break-words whitespace-pre-wrap overflow-hidden',
+                      'rounded-2xl px-4 py-2 text-sm relative transition-all duration-200 shadow-sm break-words whitespace-pre-wrap overflow-hidden min-w-0 flex-shrink',
                       isMe
                         ? (isViewOnce
                           ? (isViewed ? 'bg-neutral-100 dark:bg-neutral-900 text-neutral-400 border border-neutral-200 dark:border-neutral-800 rounded-tr-none' : 'bg-amber-600 text-white rounded-tr-none ring-2 ring-amber-400/30')
@@ -264,16 +264,16 @@ export default function MessageList({
                   </div>
 
                   {/* Actions (Reply / Delete) */}
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300 flex-shrink-0">
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
                         onReply(msg)
                       }}
-                      className="p-2 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-all active:scale-125 shadow-sm bg-white/80 dark:bg-neutral-800/80 backdrop-blur-sm border dark:border-neutral-700"
+                      className="p-1.5 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-all active:scale-125 shadow-sm bg-white/80 dark:bg-neutral-800/80 backdrop-blur-sm border dark:border-neutral-700"
                       title="Reply"
                     >
-                      <Reply size={16} className={isMe ? "" : "scale-x-[-1]"} />
+                      <Reply size={15} className={isMe ? "" : "scale-x-[-1]"} />
                     </button>
                     <div className="relative emoji-picker-container">
                       <button
@@ -282,16 +282,16 @@ export default function MessageList({
                           setShowEmojiPicker(showEmojiPicker === msg.id ? null : msg.id)
                         }}
                         className={clsx(
-                          "p-2 rounded-full transition-all active:scale-125 shadow-sm bg-white/80 dark:bg-neutral-800/80 backdrop-blur-sm border dark:border-neutral-700",
+                          "p-1.5 rounded-full transition-all active:scale-125 shadow-sm bg-white/80 dark:bg-neutral-800/80 backdrop-blur-sm border dark:border-neutral-700",
                           showEmojiPicker === msg.id
                             ? "text-blue-600 bg-blue-50 dark:bg-blue-900/30 border-blue-200"
                             : "text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/30"
                         )}
                         title="React"
                       >
-                        <Smile size={16} />
+                        <Smile size={15} />
                       </button>
-
+                      
                       {showEmojiPicker === msg.id && (
                         <EmojiPicker
                           className={clsx("z-[110]", isMe ? "right-0" : "left-0")}
@@ -310,10 +310,10 @@ export default function MessageList({
                           e.stopPropagation()
                           onDeleteMessage(msg.id, msg.audio_url)
                         }}
-                        className="p-2 text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-full transition-all active:scale-125 shadow-sm bg-white/80 dark:bg-neutral-800/80 backdrop-blur-sm border dark:border-neutral-700"
+                        className="p-1.5 text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-full transition-all active:scale-125 shadow-sm bg-white/80 dark:bg-neutral-800/80 backdrop-blur-sm border dark:border-neutral-700"
                         title="Delete message"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={15} />
                       </button>
                     )}
                   </div>
