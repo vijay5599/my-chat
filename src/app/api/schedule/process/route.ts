@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     // 1. Security Check: Verify secret key
     const { searchParams } = new URL(request.url)
     const key = searchParams.get('key')
-    const secret = process.env.CRON_SECRET || 'fallback_for_local_dev'
+    const secret = process.env.CRON_SECRET || 'my_chat_scheduler_secret_2026_xyz'
 
     if (key !== secret) {
       return NextResponse.json({ error: 'Unauthorized access.' }, { status: 401 })
