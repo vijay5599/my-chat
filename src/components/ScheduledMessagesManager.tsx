@@ -82,7 +82,13 @@ export default function ScheduledMessagesManager({
                     <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
                       <Calendar size={14} />
                       <span className="text-xs font-bold leading-none">
-                        {format(new Date(msg.scheduled_for), 'MMM d, h:mm a')}
+                        {new Date(msg.scheduled_for).toLocaleString([], { 
+                          month: 'short', 
+                          day: 'numeric', 
+                          hour: 'numeric', 
+                          minute: '2-digit',
+                          hour12: true 
+                        })}
                       </span>
                     </div>
                     <button 

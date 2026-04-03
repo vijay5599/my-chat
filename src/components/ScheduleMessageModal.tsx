@@ -22,32 +22,19 @@ export default function ScheduleMessageModal({
   };
 
   const currentISTMin = getLocalISOString();
-  const formatToLocalISO = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const offset = -date.getTimezoneOffset();
-    const diff = offset >= 0 ? '+' : '-';
-    const pad = (num: number) => (num < 10 ? '0' : '') + num;
-
-    return date.getFullYear() +
-      '-' + pad(date.getMonth() + 1) +
-      '-' + pad(date.getDate()) +
-      'T' + pad(date.getHours()) +
-      ':' + pad(date.getMinutes()) +
-      ':' + pad(date.getSeconds()) +
-      diff + pad(Math.floor(Math.abs(offset) / 60)) +
-      ':' + pad(Math.abs(offset) % 60);
-  };
-
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!content.trim() || !scheduledTime) return
     
-    // Use the standard ISO format which handled timezones correctly for databases
-    const isoDate = new Date(scheduledTime).toISOString()
-    onSchedule(content, isoDate)
+    // We create a Date object and force it into a standard ISO UTC format
+    // This ensures there is a 'Z' or '+00' at the end for the database
+    const date = new Date(scheduledTime)
+    const isoDateWithTimezone = date.toISOString()
     
-    console.log("Scheduled message:", content, isoDate)
+    onSchedule(content, isoDateWithTimezone)
+    
+    console.log("Scheduling (UTC):", isoDateWithTimezone)
     onClose()
   }
 
