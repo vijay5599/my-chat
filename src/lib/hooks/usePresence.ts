@@ -11,9 +11,19 @@ interface PresenceState {
 
 export function usePresence(roomId: string, currentUserId: string) {
   const [onlineUsers, setOnlineUsers] = useState<string[]>([])
+  const [typingUsers, setTypingUsers] = useState<string[]>([])
   const [channel, setChannel] = useState<RealtimeChannel | null>(null)
 
   const supabase = useMemo(() => createClient(), [])
+
+  const setTyping = async (isTyping: boolean) => {
+    if (channel) {
+      await channel.track({
+        user_id: currentUserId,
+        typing: isTyping
+      })
+    }
+  }
 
   useEffect(() => {
     const roomChannel = supabase.channel(`room_${roomId}`, {
@@ -35,16 +45,21 @@ export function usePresence(roomId: string, currentUserId: string) {
           presences.forEach((p: any) => {
             if (p.user_id) {
               allOnlineIds.add(p.user_id)
+              if (p.typing && p.user_id !== currentUserId) {
+                currentlyTypingIds.add(p.user_id)
+              }
             }
           })
         }
         
         setOnlineUsers(Array.from(allOnlineIds))
+        setTypingUsers(Array.from(currentlyTypingIds))
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           await roomChannel.track({
-            user_id: currentUserId
+            user_id: currentUserId,
+            typing: false
           })
         }
       })
@@ -57,5 +72,5 @@ export function usePresence(roomId: string, currentUserId: string) {
     }
   }, [roomId, currentUserId, supabase])
 
-  return { onlineUsers }
+  return { onlineUsers, typingUsers, setTyping }
 }

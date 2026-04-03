@@ -36,7 +36,6 @@ export default function ChatBox({
   const supabase = useMemo(() => createClient(), [])
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [userProfile, setUserProfile] = useState<Profile | null>(null)
-  const [typingUsers, setTypingUsers] = useState<string[]>([])
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
   const channelRef = useRef<RealtimeChannel | null>(null)
@@ -45,7 +44,7 @@ export default function ChatBox({
   const [pendingCount, setPendingCount] = useState(0)
   const [replyingTo, setReplyingTo] = useState<Message | null>(null)
   const [roomData, setRoomData] = useState<Room>(room)
-  const { onlineUsers } = usePresence(roomId, currentUserId)
+  const { onlineUsers, typingUsers: presenceTypingUsers, setTyping } = usePresence(roomId, currentUserId)
 
   // Fetch pending requests count if owner
   useEffect(() => {
@@ -156,19 +155,6 @@ export default function ChatBox({
             }
           }
         }))
-      })
-      .on('broadcast', { event: 'typing' }, (payload) => {
-        const { userId, isTyping } = payload.payload
-        if (userId === currentUserId) return
-
-        setTypingUsers((prev) => {
-          if (isTyping) {
-            if (prev.includes(userId)) return prev
-            return [...prev, userId]
-          } else {
-            return prev.filter(id => id !== userId)
-          }
-        })
       })
       .subscribe()
 
@@ -380,13 +366,7 @@ export default function ChatBox({
   }
 
   const handleTyping = (isTyping: boolean) => {
-    if (channelRef.current) {
-      channelRef.current.send({
-        type: 'broadcast',
-        event: 'typing',
-        payload: { userId: currentUserId, isTyping }
-      })
-    }
+    setTyping(isTyping)
   }
 
   const handleToggleReaction = async (messageId: string, emoji: string) => {
@@ -496,7 +476,14 @@ export default function ChatBox({
 
         <div className="px-6 py-2 min-h-[40px] flex items-center justify-between">
           <div className="flex-1">
-            {typingUsers.length > 0 && <TypingAnimation />}
+            {presenceTypingUsers.length > 0 && (
+              <TypingAnimation 
+                names={presenceTypingUsers
+                  .map(id => members.find(m => m.id === id)?.username)
+                  .filter(Boolean) as string[]
+                } 
+              />
+            )}
           </div>
           {/* <ReplyChips
             suggestions={suggestions}
