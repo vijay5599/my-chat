@@ -13,6 +13,7 @@ import { X, PanelLeftClose } from 'lucide-react'
 import clsx from 'clsx'
 import { useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { ThemeToggle } from './ThemeToggle'
 
 export default function Sidebar({
   rooms,
@@ -244,9 +245,12 @@ export default function Sidebar({
             <p className="text-sm font-semibold truncate">{profile?.username || 'User'}</p>
             <p className="text-[10px] text-neutral-500 truncate">{userEmail}</p>
           </div>
-          <button onClick={() => logout()} className="text-neutral-500 hover:text-red-500 p-1" title="Logout">
-            <LogOut size={16} />
-          </button>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <ThemeToggle />
+            <button onClick={() => logout()} className="text-neutral-500 hover:text-red-500 p-1.5 transition-colors" title="Logout">
+              <LogOut size={16} />
+            </button>
+          </div>
         </div>
 
         <Link

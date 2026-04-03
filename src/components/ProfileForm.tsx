@@ -6,6 +6,7 @@ import { Profile } from '@/types'
 import { Avatar } from '@/components/Avatar'
 import { useRouter } from 'next/navigation'
 import { Loader2, Upload, Check } from 'lucide-react'
+import { ThemeToggle } from './ThemeToggle'
 
 export default function ProfileForm({ initialProfile }: { initialProfile: Profile }) {
   const [username, setUsername] = useState(initialProfile.username || '')
@@ -106,6 +107,14 @@ export default function ProfileForm({ initialProfile }: { initialProfile: Profil
             placeholder="CoolCat123"
             required
           />
+        </div>
+
+        <div className="pt-2">
+          <label className="block text-sm font-medium mb-3">Appearance</label>
+          <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800 rounded-xl border dark:border-neutral-700">
+            <span className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Switch Theme</span>
+            <ThemeToggle />
+          </div>
         </div>
 
         {message && (
