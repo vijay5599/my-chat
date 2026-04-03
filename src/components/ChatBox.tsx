@@ -426,6 +426,7 @@ export default function ChatBox({
         onlineUsers={onlineUsers}
         members={members}
         isOwner={roomData.owner_id === currentUserId}
+        currentUserId={currentUserId}
         onManageRequests={() => setIsManagingRequests(true)}
         onManageScheduled={() => setIsManagingScheduled(true)}
         pendingCount={pendingCount}

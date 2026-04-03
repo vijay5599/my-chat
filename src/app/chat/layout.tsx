@@ -15,10 +15,10 @@ export default async function ChatLayout({
     redirect('/login')
   }
 
-  // Fetch rooms (all rooms for sidebar browsing)
+  // Fetch rooms (including members for DM profile display)
   const { data: allRooms } = await supabase
     .from('rooms')
-    .select('*')
+    .select('*, room_members(user_id, profiles(*))')
     .order('created_at', { ascending: false })
 
   // Fetch current user memberships

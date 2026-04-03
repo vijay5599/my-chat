@@ -8,9 +8,10 @@ interface AvatarProps {
   name?: string | null
   size?: 'sm' | 'md' | 'lg'
   isOnline?: boolean
+  className?: string
 }
 
-export function Avatar({ url, name, size = 'md', isOnline = false }: AvatarProps) {
+export function Avatar({ url, name, size = 'md', isOnline = false, className }: AvatarProps) {
   const sizeClasses = {
     sm: 'w-8 h-8 text-xs',
     md: 'w-10 h-10 text-sm',
@@ -40,7 +41,7 @@ export function Avatar({ url, name, size = 'md', isOnline = false }: AvatarProps
   const bgColor = colors[colorIndex]
 
   return (
-    <div className={`${sizeClasses[size]} rounded-full overflow flex-shrink-0 relative flex items-center justify-center text-white font-medium ${bgColor}`}>
+    <div className={clsx(sizeClasses[size], "rounded-full overflow-hidden flex-shrink-0 relative flex items-center justify-center text-white font-medium", bgColor, className)}>
       {url ? (
         <Image
           src={url}

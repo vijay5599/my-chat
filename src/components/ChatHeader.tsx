@@ -3,11 +3,12 @@
 import { useNav } from './NavigationWrapper'
 import { Menu, Clock, Users, Pencil, Check, X, Settings } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
-import { renameRoom } from '@/app/chat/actions'
+import { renameRoom, getOrCreateDirectChat } from '@/app/chat/actions'
 import { Room, Profile } from '@/types'
 import { Avatar } from './Avatar'
 import { ThemeToggle } from './ThemeToggle'
 import { WallpaperPicker } from './WallpaperPicker'
+import { useRouter } from 'next/navigation'
 
 export default function ChatHeader({
   room,
@@ -15,6 +16,7 @@ export default function ChatHeader({
   onlineUsers,
   members = [],
   isOwner,
+  currentUserId,
   onManageRequests,
   onManageScheduled,
   pendingCount = 0
@@ -24,10 +26,12 @@ export default function ChatHeader({
   onlineUsers: string[],
   members?: Profile[],
   isOwner?: boolean,
+  currentUserId: string,
   onManageRequests?: () => void,
   onManageScheduled?: () => void,
   pendingCount?: number
 }) {
+  const router = useRouter()
   const { isSidebarOpen, setIsSidebarOpen, isMobile } = useNav()
   const [isEditing, setIsEditing] = useState(false)
   const [newName, setNewName] = useState(room.name)
@@ -37,6 +41,10 @@ export default function ChatHeader({
   const popupRef = useRef<HTMLDivElement>(null)
   const settingsRef = useRef<HTMLDivElement>(null)
   const settingsButtonRef = useRef<HTMLButtonElement>(null)
+
+  const isDM = room.type === 'direct'
+  const otherMember = members.find(m => m.id !== currentUserId)
+  const roomTitle = isDM ? (otherMember?.username || 'Direct Message') : room.name
 
   // Map online IDs to profiles
   const onlineMembersList = members.filter(m => onlineUsers.includes(m.id))
@@ -122,7 +130,7 @@ export default function ChatHeader({
           )}
 
           <div className="flex-1 min-w-0">
-            {isEditing ? (
+            {isEditing && !isDM ? (
               <div className="flex items-center gap-2 w-full max-w-md">
                 <input
                   type="text"
@@ -143,10 +151,13 @@ export default function ChatHeader({
               </div>
             ) : (
               <div className="flex items-center gap-1.5 group/title">
+                {isDM && (
+                  <Avatar url={otherMember?.avatar_url} name={otherMember?.username} size="sm" className="shrink-0 mr-1" />
+                )}
                 <h2 className="font-bold text-base sm:text-lg text-slate-800 dark:text-slate-100 truncate tracking-tight">
-                  {room.name}
+                  {roomTitle}
                 </h2>
-                {isOwner && (
+                {isOwner && !isDM && (
                   <button
                     onClick={() => setIsEditing(true)}
                     className="p-1 sm:opacity-0 sm:group-hover/title:opacity-100 text-slate-400 hover:text-blue-500 transition-all shrink-0"
@@ -237,23 +248,31 @@ export default function ChatHeader({
                 ) : (
                   <div className="space-y-1">
                     {onlineMembersList.map((member) => (
-                      <div
+                      <button
                         key={member.id}
-                        className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors group cursor-default"
+                        disabled={member.id === (members.find(m => m.username === 'Me')?.id || '')} // Don't DM yourself if logic detects you
+                        onClick={async () => {
+                          const result = await getOrCreateDirectChat(member.id)
+                          if (result.data) {
+                            router.push(`/chat/${result.data.id}`)
+                            setIsOnlineList(false)
+                          }
+                        }}
+                        className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors group text-left"
                       >
                         <div className="relative shrink-0">
                           <Avatar url={member.avatar_url} name={member.username} size="sm" />
                           <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
+                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                             {member.username}
                           </p>
                           <p className="text-[10px] text-green-500 font-medium tracking-wide">
                             Active now
                           </p>
                         </div>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 )}

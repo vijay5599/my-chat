@@ -100,14 +100,30 @@ export default function Sidebar({
   }
 
   const filteredRooms = localRooms.filter(r => r.name.toLowerCase().includes(search.toLowerCase()))
+  
+  const channels = filteredRooms.filter(r => r.type === 'group' || !r.type)
+  const dms = filteredRooms.filter(r => r.type === 'direct')
+
+  const getDMInfo = (room: Room & { room_members?: { user_id: string, profiles: Profile }[] }) => {
+    const otherMember = room.room_members?.find(m => m.user_id !== profile?.id)
+    return {
+      name: otherMember?.profiles?.username || 'Unknown User',
+      avatar: otherMember?.profiles?.avatar_url
+    }
+  }
 
   return (
-    <div className="w-72 flex flex-col h-full bg-white dark:bg-slate-900 shadow-[var(--card-shadow)]">
+    <div className="w-72 flex flex-col h-full bg-white dark:bg-slate-900 shadow-[var(--card-shadow)] font-inter">
       <div className="p-4 border-b border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between bg-white/80 dark:bg-slate-900/70 backdrop-blur-sm">
-        <h2 className="font-bold text-lg text-slate-700 dark:text-slate-100 tracking-tight">Chats</h2>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <span className="text-white font-bold text-lg select-none">M</span>
+          </div>
+          <h2 className="font-bold text-lg text-slate-800 dark:text-slate-100 tracking-tight">myChat</h2>
+        </div>
         <div className="flex items-center gap-1">
           <button onClick={() => setIsCreating(true)} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors" title="Create Room">
-            <PlusCircle size={18} color='grey' />
+            <PlusCircle size={18} className="text-slate-500" />
           </button>
           {!isMobile ? (
             <button
@@ -128,42 +144,42 @@ export default function Sidebar({
         </div>
       </div>
 
-      <div className="p-4 border-b dark:border-neutral-700">
+      <div className="px-4 py-3">
         <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
           <input
             type="text"
-            placeholder="Search rooms..."
+            placeholder="Search..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-2 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-300 shadow-inner"
+            className="w-full bg-slate-100 dark:bg-slate-800/50 border-none rounded-xl pl-9 pr-4 py-2 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
           />
         </div>
       </div>
 
-      <div className="p-4 overflow-y-auto flex-1">
+      <div className="flex-1 overflow-y-auto custom-scrollbar px-3 space-y-6 pb-4">
         {isCreating && (
-          <form onSubmit={handleCreateRoom} className="mb-4">
+          <form onSubmit={handleCreateRoom} className="mb-4 p-2 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-200 dark:border-blue-900/30">
             <input
               type="text"
               placeholder="Room Name"
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
-              className="w-full bg-white dark:bg-neutral-900 border border-blue-500 rounded-md px-3 py-2 text-sm mb-2 focus:outline-none"
+              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               autoFocus
             />
             <div className="flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setIsCreating(false)}
-                className="text-xs text-neutral-500 hover:text-neutral-700"
+                className="text-[10px] font-bold text-neutral-500 hover:text-neutral-700 uppercase"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={!roomName.trim()}
-                className="text-xs bg-blue-500 text-white px-3 py-1 rounded-md"
+                className="text-[10px] font-bold bg-blue-600 text-white px-3 py-1.5 rounded-lg uppercase shadow-sm shadow-blue-500/20"
               >
                 Create
               </button>
@@ -171,83 +187,133 @@ export default function Sidebar({
           </form>
         )}
 
-        {filteredRooms.length === 0 ? (
-          <p className="text-sm text-neutral-500 text-center py-4">No rooms found</p>
-        ) : (
-          <ul className="space-y-1">
-            {filteredRooms.map(room => {
-              const isActive = pathname === `/chat/${room.id}`
-              const isJoined = joinedRoomIds.includes(room.id)
-              const isPending = joinRequests.some(req => req.room_id === room.id && req.status === 'pending')
+        {/* Channels Section */}
+        <div>
+          <h3 className="px-2 mb-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Rooms</h3>
+          {channels.length === 0 ? (
+            <p className="text-[11px] text-neutral-500 px-2 italic">Join a room to start</p>
+          ) : (
+            <ul className="space-y-0.5">
+              {channels.map(room => {
+                const isActive = pathname === `/chat/${room.id}`
+                const isJoined = joinedRoomIds.includes(room.id)
+                const isPending = joinRequests.some(req => req.room_id === room.id && req.status === 'pending')
+                const isOwner = room.owner_id === profile?.id
 
-              // Fallback: If no owner is assigned yet, allow current user to delete if they are likely the owner 
-              // or just show it so they can clean up existing rooms.
-              const isOwner = room.owner_id === profile?.id || !room.owner_id
-
-              return (
-                <li key={room.id} className="group/item relative">
-                  <Link
-                    href={`/chat/${room.id}`}
-                    onClick={(e) => {
-                      if (isActive) {
-                        e.preventDefault()
-                      }
-                      if (isMobile) {
-                        setIsSidebarOpen(false)
-                      }
-                    }}
-                    className={clsx(
-                      "flex items-center px-3 py-2 rounded-md transition duration-200 pr-10",
-                      isActive
-                        ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 ring-1 ring-blue-500/20"
-                        : "hover:bg-neutral-200 dark:hover:bg-neutral-700"
-                    )}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate flex items-center gap-1.5">
-                        {!isJoined && (
-                          isPending
-                            ? <Clock size={12} className="text-yellow-500" />
-                            : <Lock size={12} className="text-neutral-400" />
-                        )}
-                        {room.name}
-                      </p>
-                      <p className="text-xs text-neutral-500">{new Date(room.created_at).toLocaleDateString('en-US')}</p>
-                    </div>
-                  </Link>
-
-                  {isOwner && (
-                    <button
-                      onClick={(e) => handleDeleteRoom(e, room.id)}
-                      disabled={isDeleting === room.id}
+                return (
+                  <li key={room.id} className="group/item relative">
+                    <Link
+                      href={`/chat/${room.id}`}
+                      onClick={(e) => {
+                        if (isActive) e.preventDefault()
+                        if (isMobile) setIsSidebarOpen(false)
+                      }}
                       className={clsx(
-                        "absolute right-2 top-1/2 -translate-y-1/2 p-1.5 transition-all disabled:opacity-50",
-                        "text-neutral-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md",
-                        // Make only partially transperant so it's discoverable, or fully visible on mobile
-                        isMobile ? "opacity-100" : "opacity-0 group-hover/item:opacity-100"
+                        "flex items-center gap-3 px-3 py-2 rounded-xl transition-all group",
+                        isActive
+                          ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50"
                       )}
-                      title="Delete Room"
                     >
-                      <Trash2 size={14} className={isDeleting === room.id ? 'animate-pulse' : ''} />
-                    </button>
-                  )}
-                </li>
-              )
-            })}
-          </ul>
-        )}
+                      <div className={clsx(
+                        "w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 transition-colors",
+                        isActive ? "bg-white/20 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 group-hover:text-blue-600"
+                      )}>
+                        #
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold truncate flex items-center gap-1.5">
+                          {!isJoined && (
+                            isPending
+                              ? <Clock size={12} className={isActive ? "text-white" : "text-amber-500"} />
+                              : <Lock size={12} className={isActive ? "text-white" : "text-slate-400"} />
+                          )}
+                          {room.name}
+                        </p>
+                        <p className={clsx("text-[10px] truncate", isActive ? "text-blue-100" : "text-slate-400")}>
+                          Public Channel
+                        </p>
+                      </div>
+                    </Link>
+
+                    {isOwner && (
+                      <button
+                        onClick={(e) => handleDeleteRoom(e, room.id)}
+                        disabled={isDeleting === room.id}
+                        className={clsx(
+                          "absolute right-2 top-1/2 -translate-y-1/2 p-1.5 transition-all opacity-0 group-hover/item:opacity-100",
+                          isActive ? "text-white/80 hover:text-white" : "text-slate-400 hover:text-red-500"
+                        )}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </div>
+
+        {/* Direct Messages Section */}
+        <div>
+          <h3 className="px-2 mb-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Direct Messages</h3>
+          {dms.length === 0 ? (
+            <p className="text-[11px] text-neutral-500 px-2 italic">Connect with users</p>
+          ) : (
+            <ul className="space-y-0.5">
+              {dms.map(room => {
+                const isActive = pathname === `/chat/${room.id}`
+                const dmInfo = getDMInfo(room as any)
+
+                return (
+                  <li key={room.id} className="group/item relative">
+                    <Link
+                      href={`/chat/${room.id}`}
+                      onClick={(e) => {
+                        if (isActive) e.preventDefault()
+                        if (isMobile) setIsSidebarOpen(false)
+                      }}
+                      className={clsx(
+                        "flex items-center gap-3 px-3 py-2 rounded-xl transition-all group",
+                        isActive
+                          ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50"
+                      )}
+                    >
+                      <Avatar 
+                        url={dmInfo.avatar} 
+                        name={dmInfo.name} 
+                        size="sm" 
+                        className={clsx("shrink-0", !isActive && "ring-1 ring-slate-200 dark:ring-slate-700")}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold truncate hover:text-blue-500 transition-colors">
+                          {dmInfo.name}
+                        </p>
+                        <p className={clsx("text-[10px] truncate", isActive ? "text-blue-100" : "text-slate-400")}>
+                          Direct Message
+                        </p>
+                      </div>
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </div>
       </div>
 
-      <div className="p-4 border-t dark:border-neutral-700 space-y-3">
+      <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-4 bg-slate-50/50 dark:bg-slate-900/50">
         <div className="flex items-center gap-3">
           <Avatar url={profile?.avatar_url} name={profile?.username || userEmail} size="sm" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold truncate">{profile?.username || 'User'}</p>
-            <p className="text-[10px] text-neutral-500 truncate">{userEmail}</p>
+            <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{profile?.username || 'User'}</p>
+            <p className="text-[10px] text-slate-500 truncate">{userEmail}</p>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <ThemeToggle />
-            <button onClick={() => logout()} className="text-neutral-500 hover:text-red-500 p-1.5 transition-colors" title="Logout">
+            <button onClick={() => logout()} className="text-slate-400 hover:text-red-500 p-1.5 transition-colors" title="Logout">
               <LogOut size={16} />
             </button>
           </div>
@@ -255,10 +321,10 @@ export default function Sidebar({
 
         <Link
           href="/profile"
-          className="flex items-center gap-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
+          className="flex items-center justify-center gap-2 py-2 text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest bg-blue-50 dark:bg-blue-900/20 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all border border-blue-100 dark:border-blue-900/30"
         >
-          <Settings size={14} />
-          Edit Profile
+          <Settings size={12} />
+          Account settings
         </Link>
       </div>
     </div>

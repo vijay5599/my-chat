@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { Profile } from '@/types'
+import { Room, Profile } from '@/types'
 
 export async function createRoom(formData: FormData) {
   const supabase = await createClient()
@@ -17,7 +17,8 @@ export async function createRoom(formData: FormData) {
     .from('rooms')
     .insert([{ 
       name, 
-      owner_id: userData.user.id 
+      owner_id: userData.user.id,
+      type: 'group'
     }])
     .select()
     .single()
@@ -325,4 +326,92 @@ export async function cancelScheduledMessage(id: string) {
 
   if (error) return { error: error.message }
   return { success: true }
+}
+export async function getOrCreateDirectChat(otherUserId: string) {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) return { error: 'Not authenticated' }
+  const currentUserId = userData.user.id
+
+  // 1. Find if a direct room already exists between these two users
+  // We look for rooms where both users are members and room type is 'direct'
+  const { data: existingRooms, error: searchError } = await supabase
+    .from('room_members')
+    .select('room_id, rooms!inner(id, type)')
+    .eq('user_id', currentUserId)
+    .eq('rooms.type', 'direct')
+
+  if (searchError) return { error: searchError.message }
+
+  // Of those rooms where current user is a member, which one also has the other user?
+  for (const userRoom of existingRooms || []) {
+    const { data: otherMember } = await supabase
+      .from('room_members')
+      .select('id')
+      .eq('room_id', userRoom.room_id)
+      .eq('user_id', otherUserId)
+      .single()
+
+    if (otherMember) {
+      return { data: { id: userRoom.room_id } }
+    }
+  }
+
+  // 2. If no room exists, create a new 'direct' room
+  // Use a generic name, we'll override it in the UI with the other person's name
+  const { data: newRoom, error: createError } = await supabase
+    .from('rooms')
+    .insert([{ 
+      name: `dm-${currentUserId}-${otherUserId}`, 
+      owner_id: currentUserId,
+      type: 'direct'
+    }])
+    .select()
+    .single()
+
+  if (createError) return { error: createError.message }
+
+  // 3. Add both users to the new room
+  await supabase.from('room_members').insert([
+    { room_id: newRoom.id, user_id: currentUserId },
+    { room_id: newRoom.id, user_id: otherUserId }
+  ])
+
+  revalidatePath('/chat')
+  return { data: newRoom }
+}
+
+export async function getRoomsWithProfiles() {
+  const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) return { error: 'Not authenticated' }
+
+  // Fetch rooms where the user is a member, including the other member's profile for DMs
+  const { data, error } = await supabase
+    .from('room_members')
+    .select(`
+      room_id,
+      rooms (
+        id,
+        name,
+        type,
+        created_at,
+        owner_id,
+        room_members (
+          user_id,
+          profiles (
+            id,
+            username,
+            avatar_url
+          )
+        )
+      )
+    `)
+    .eq('user_id', userData.user.id)
+
+  if (error) return { error: error.message }
+
+  // Format the data to return a list of rooms
+  const rooms = data.map(item => item.rooms).filter(Boolean) as unknown as (Room & { room_members: { profiles: Profile }[] })[]
+  return { data: rooms }
 }
