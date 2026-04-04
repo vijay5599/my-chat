@@ -339,10 +339,10 @@ export default function MessageInput({
               onChange={handleChange}
               placeholder={isViewOnce ? "Type a secret message..." : "Type a message..."}
               className={clsx(
-                "flex-1 min-w-0 h-11 rounded-2xl px-4 border transition-all duration-500 bg-white/5 border-white/5 focus:bg-white/10 focus:outline-none focus:ring-0 text-sm placeholder:text-white/20 text-white",
-                isViewOnce
-                  ? "border-amber-400/20 focus:bg-amber-400/5 placeholder:text-amber-600/30"
-                  : ""
+                "flex-1 min-w-0 h-11 rounded-2xl px-4 border transition-all duration-300 text-sm placeholder:text-white/20 text-white focus:outline-none relative z-10",
+                !isViewOnce
+                  ? "bg-white/5 border-white/10 focus:bg-white/10 focus:border-blue-500/50 focus:ring400/50 focus:ring-4 focus:ring-sky-500/15"
+                  : "bg-amber-500/5 border-amber-600/20 focus:border-amber-500/50 focus:ring-4 focus:ring-amber-500/20 placeholder:text-amber-600/30"
               )}
             />
             <button
