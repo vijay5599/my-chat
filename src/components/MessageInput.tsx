@@ -2,22 +2,25 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Mic, Eye, EyeOff, Smile, Send, X, Clock, Plus } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import EmojiPicker from './EmojiPicker'
+import GifPicker from './GifPicker'
 import { Profile, Message } from '@/types'
 import { Avatar } from './Avatar'
 import VoiceRecorder from './VoiceRecorder'
 import ScheduleMessageModal from './ScheduleMessageModal'
+import { Image as ImageIcon } from 'lucide-react'
 import clsx from 'clsx'
 
-export default function MessageInput({ 
-  onSendMessage, 
+export default function MessageInput({
+  onSendMessage,
   onScheduleMessage,
   onTyping,
   members,
   currentUserId,
   replyingTo,
   onCancelReply
-}: { 
+}: {
   onSendMessage: (content: string, audioBlob?: Blob, isViewOnce?: boolean) => void,
   onScheduleMessage: (content: string, scheduledFor: string) => void,
   onTyping: (isTyping: boolean) => void,
@@ -33,10 +36,17 @@ export default function MessageInput({
   const [mentionSearch, setMentionSearch] = useState<string | null>(null)
   const [cursorPosition, setCursorPosition] = useState(0)
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false)
+  const [isGifPickerOpen, setIsGifPickerOpen] = useState(false)
   const [showMoreActions, setShowMoreActions] = useState(false)
+
+  const handleSelectGif = (url: string) => {
+    onSendMessage(url)
+    setIsGifPickerOpen(false)
+  }
   const inputRef = useRef<HTMLInputElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const emojiPickerRef = useRef<HTMLDivElement>(null)
+  const gifPickerRef = useRef<HTMLDivElement>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
@@ -45,7 +55,7 @@ export default function MessageInput({
     setCursorPosition(pos)
 
     onTyping(true)
-    
+
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current)
     }
@@ -77,10 +87,10 @@ export default function MessageInput({
     const beforeAt = content.slice(0, lastAtSymbol)
     const afterMention = content.slice(cursorPosition)
     const newContent = `${beforeAt}@${username} ${afterMention}`
-    
+
     setContent(newContent)
     setMentionSearch(null)
-    
+
     // Put focus back and move cursor after the inserted mention
     setTimeout(() => {
       if (inputRef.current) {
@@ -91,11 +101,11 @@ export default function MessageInput({
     }, 0)
   }
 
-  const filteredMembers = mentionSearch !== null 
-    ? members.filter(m => 
-        m.id !== currentUserId && 
-        m.username.toLowerCase().includes(mentionSearch.toLowerCase())
-      )
+  const filteredMembers = mentionSearch !== null
+    ? members.filter(m =>
+      m.id !== currentUserId &&
+      m.username.toLowerCase().includes(mentionSearch.toLowerCase())
+    )
     : []
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -168,7 +178,7 @@ export default function MessageInput({
                   {replyingTo.content || (replyingTo.audio_url ? "Voice message" : "Original message")}
                 </p>
               </div>
-              <button 
+              <button
                 onClick={onCancelReply}
                 className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-full transition-colors"
                 title="Cancel reply"
@@ -180,34 +190,48 @@ export default function MessageInput({
 
           {isEmojiPickerOpen && (
             <div ref={emojiPickerRef}>
-              <EmojiPicker 
+              <EmojiPicker
                 onSelect={(emoji) => {
                   const start = inputRef.current?.selectionStart || content.length
                   const end = inputRef.current?.selectionEnd || content.length
                   const newContent = content.substring(0, start) + emoji + content.substring(end)
                   setContent(newContent)
-                  
+
                   // Focus back on input and move cursor
                   setTimeout(() => {
                     inputRef.current?.focus()
                     const newPos = start + emoji.length
                     inputRef.current?.setSelectionRange(newPos, newPos)
                   }, 0)
-                }} 
-                onClose={() => setIsEmojiPickerOpen(false)} 
+                }}
+                onClose={() => setIsEmojiPickerOpen(false)}
               />
             </div>
           )}
           <form onSubmit={handleSubmit} className="flex gap-2 items-center relative">
+            <AnimatePresence>
+              {isGifPickerOpen && (
+                <div ref={gifPickerRef}>
+                  <GifPicker
+                    onSelect={handleSelectGif}
+                    onClose={() => setIsGifPickerOpen(false)}
+                  />
+                </div>
+              )}
+            </AnimatePresence>
+
             <div className="flex items-center">
               <button
                 type="button"
-                onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
+                onClick={() => {
+                  setIsEmojiPickerOpen(!isEmojiPickerOpen)
+                  setIsGifPickerOpen(false)
+                }}
                 className={clsx(
-                  "w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200 flex-shrink-0",
+                  "w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-300 flex-shrink-0",
                   isEmojiPickerOpen
-                    ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                    : "text-neutral-500 hover:text-blue-600 hover:bg-neutral-100 dark:hover:bg-neutral-900"
+                    ? "bg-amber-500/20 text-amber-400"
+                    : "text-white/40 hover:text-white hover:bg-white/5"
                 )}
                 title="Emojis"
               >
@@ -219,10 +243,10 @@ export default function MessageInput({
                   type="button"
                   onClick={() => setShowMoreActions(!showMoreActions)}
                   className={clsx(
-                    "w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200 flex-shrink-0 sm:hidden",
+                    "w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-300 flex-shrink-0 sm:hidden",
                     showMoreActions
-                      ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600"
-                      : "text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-900"
+                      ? "bg-indigo-500/20 text-indigo-400"
+                      : "text-white/40 hover:bg-white/5"
                   )}
                   title="More actions"
                 >
@@ -288,19 +312,22 @@ export default function MessageInput({
                     {isViewOnce ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
 
-                  <button
+                  {/* <button
                     type="button"
-                    onClick={() => setIsScheduleModalOpen(true)}
+                    onClick={() => {
+                      setIsGifPickerOpen(!isGifPickerOpen)
+                      setIsEmojiPickerOpen(false)
+                    }}
                     className={clsx(
-                      "w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200",
-                      isScheduleModalOpen
-                        ? "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400"
-                        : "text-neutral-500 hover:text-purple-600 hover:bg-neutral-100 dark:hover:bg-neutral-900"
+                      "w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-300",
+                      isGifPickerOpen
+                        ? "bg-indigo-500/20 text-indigo-400"
+                        : "text-white/40 hover:text-white hover:bg-white/5"
                     )}
-                    title="Schedule"
+                    title="GIFs"
                   >
-                    <Clock size={18} />
-                  </button>
+                    <ImageIcon size={18} />
+                  </button> */}
                 </div>
               </div>
             </div>
@@ -312,22 +339,22 @@ export default function MessageInput({
               onChange={handleChange}
               placeholder={isViewOnce ? "Type a secret message..." : "Type a message..."}
               className={clsx(
-                "flex-1 min-w-0 h-10 rounded-full px-4 border transition-all duration-200 bg-neutral-100 dark:bg-neutral-900 focus:outline-none focus:ring-2 text-sm",
+                "flex-1 min-w-0 h-11 rounded-2xl px-4 border transition-all duration-500 bg-white/5 border-white/5 focus:bg-white/10 focus:outline-none focus:ring-0 text-sm placeholder:text-white/20 text-white",
                 isViewOnce
-                  ? "border-amber-400/50 focus:ring-amber-500 placeholder:text-amber-600/50"
-                  : "dark:border-neutral-700 focus:ring-blue-500"
+                  ? "border-amber-400/20 focus:bg-amber-400/5 placeholder:text-amber-600/30"
+                  : ""
               )}
             />
             <button
               type="submit"
               disabled={!content.trim()}
               className={clsx(
-                "w-10 h-10 flex-shrink-0 rounded-full text-sm font-medium disabled:opacity-50 transition-all shadow-sm active:scale-95 flex items-center justify-center",
-                isViewOnce ? "bg-amber-600 hover:bg-amber-700 text-white" : "bg-blue-600 hover:bg-blue-700 text-white"
+                "w-11 h-11 flex-shrink-0 rounded-2xl text-sm font-medium disabled:opacity-30 transition-all duration-500 shadow-xl active:scale-95 flex items-center justify-center",
+                isViewOnce ? "bg-gradient-to-br from-amber-500 to-orange-600 text-white" : "bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20"
               )}
               title="Send message"
             >
-              <Send size={16} />
+              <Send size={18} className="drop-shadow-glow" />
             </button>
           </form>
           {isViewOnce && (
@@ -337,7 +364,7 @@ export default function MessageInput({
           )}
 
           {isScheduleModalOpen && (
-            <ScheduleMessageModal 
+            <ScheduleMessageModal
               onClose={() => setIsScheduleModalOpen(false)}
               onSchedule={(msgContent, scheduledFor) => {
                 onScheduleMessage(msgContent, scheduledFor)

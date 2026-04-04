@@ -36,7 +36,8 @@
   min-width: 0;
 }
 
-html, body {
+html,
+body {
   min-height: 100%;
 }
 
@@ -67,19 +68,44 @@ body::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.08);
 }
 
-button, input, textarea, select {
+button,
+input,
+textarea,
+select {
   transition: all .2s ease;
   font: inherit;
 }
 
-input, textarea {
+input,
+textarea {
   border-radius: clamp(0.4rem, 1vw, 0.75rem);
   border: 1px solid #dbeafe;
   background: var(--surface);
 }
 
-.dark input, .dark textarea {
+@keyframes emoji-pulse {
+
+  0%,
+  100% {
+    transform: scale(1) translateY(0);
+    filter: drop-shadow(0 0 0px transparent);
+  }
+
+  50% {
+    transform: scale(1.15) translateY(-2px);
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.4));
+  }
+}
+
+.living-emoji {
+  display: inline-block;
+  animation: emoji-pulse 3s ease-in-out infinite;
+  margin-right: 2px;
+  line-height: 1;
+}
+
+.dark input,
+.dark textarea {
   border-color: #1e293b;
   background: #0b1120;
 }
-

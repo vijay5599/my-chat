@@ -76,6 +76,27 @@ export default function MessageList({
   const renderMessageContent = (content: string, isMe: boolean) => {
     if (!content) return null
 
+    const isMediaUrl = (url: string) => {
+      return url.match(/\.(gif|jpe?g|png|webp|svg)(\?.*)?$/i) || 
+             url.includes('giphy.com/media/') || 
+             url.includes('media.giphy.com/') ||
+             url.includes('tenor.com/view/') ||
+             url.includes('media.tenor.com/');
+    }
+
+    if (isMediaUrl(content)) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black/20 max-w-[280px] group relative"
+        >
+          <img src={content} alt="Media" className="w-full h-auto block opacity-90 group-hover:opacity-100 transition-opacity" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+        </motion.div>
+      )
+    }
+
     if (isEmojiOnly(content)) {
       return (
         <motion.div
@@ -83,32 +104,39 @@ export default function MessageList({
           animate={{ scale: 1.1, rotate: 0, opacity: 1 }}
           whileHover={{ scale: 1.3, rotate: 5 }}
           transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-          className="text-5xl py-2 select-none cursor-default"
+          className="text-5xl py-2 select-none cursor-default living-emoji"
         >
           {content}
         </motion.div>
       )
     }
 
-    // Regex to match @username (stopping at space or end of string)
+    const emojiRegex = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g;
+
+    const formatText = (text: string) => {
+      const bits = text.split(emojiRegex);
+      return bits.map((bit, idx) => 
+        emojiRegex.test(bit) 
+          ? <span key={idx} className="living-emoji">{bit}</span> 
+          : bit
+      );
+    };
+
     const mentionRegex = /@(\w+)/g
     const parts = content.split(mentionRegex)
 
-    if (parts.length === 1) return <p className="break-words leading-relaxed text-sm">{content}</p>
-
     return (
-      <p className="break-words leading-relaxed text-sm">
+      <div className="break-words leading-relaxed text-sm">
         {parts.map((part, i) => {
-          // Every odd part is a captured username from the regex
           if (i % 2 === 1) {
             const isMember = members.some(m => m.username === part)
             return (
               <span
                 key={i}
                 className={clsx(
-                  "font-bold px-1 rounded-sm",
+                  "font-bold px-1.5 py-0.5 rounded-md mx-0.5",
                   isMember
-                    ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 border border-blue-200/50 dark:border-blue-800/50"
+                    ? "text-indigo-400 bg-indigo-500/10"
                     : "text-neutral-500"
                 )}
               >
@@ -116,9 +144,9 @@ export default function MessageList({
               </span>
             )
           }
-          return part
+          return formatText(part)
         })}
-      </p>
+      </div>
     )
   }
 
