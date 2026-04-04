@@ -270,34 +270,41 @@ export default function MessageList({
                         "mt-2 flex flex-wrap gap-1.5",
                         isMe ? "justify-end" : "justify-start"
                       )}>
-                        {Object.entries(
-                          msg.reactions.reduce((acc, r) => {
-                            acc[r.emoji] = acc[r.emoji] || []
-                            acc[r.emoji].push(r)
-                            return acc
-                          }, {} as Record<string, MessageReaction[]>)
-                        ).map(([emoji, reactions]) => {
-                          const hasReacted = reactions.some(r => r.user_id === currentUserId)
-                          return (
-                            <button
-                              key={emoji}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                onToggleReaction(msg.id, emoji)
-                              }}
-                              className={clsx(
-                                "flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-all border",
-                                hasReacted
-                                  ? "bg-blue-50 dark:bg-blue-900/40 border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 shadow-sm"
-                                  : "bg-white/50 dark:bg-neutral-800/50 border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700"
-                              )}
-                              title={reactions.map(r => r.profiles?.username).join(', ')}
-                            >
-                              <span>{emoji}</span>
-                              <span className="font-bold text-[10px]">{reactions.length}</span>
-                            </button>
-                          )
-                        })}
+                        <AnimatePresence>
+                          {Object.entries(
+                            msg.reactions.reduce((acc, r) => {
+                              acc[r.emoji] = acc[r.emoji] || []
+                              acc[r.emoji].push(r)
+                              return acc
+                            }, {} as Record<string, MessageReaction[]>)
+                          ).map(([emoji, reactions]) => {
+                            const hasReacted = reactions.some(r => r.user_id === currentUserId)
+                            return (
+                              <motion.button
+                                key={emoji}
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0, opacity: 0 }}
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  onToggleReaction(msg.id, emoji)
+                                }}
+                                className={clsx(
+                                  "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs transition-all border shadow-sm backdrop-blur-[2px]",
+                                  hasReacted
+                                    ? "bg-blue-100/80 dark:bg-blue-600/30 border-blue-300 dark:border-blue-500 text-blue-800 dark:text-blue-100"
+                                    : "bg-white/60 dark:bg-neutral-800/60 border-neutral-200/50 dark:border-neutral-700/50 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700"
+                                )}
+                                title={reactions.map(r => r.profiles?.username).join(', ')}
+                              >
+                                <span className={clsx("text-sm", hasReacted && "living-emoji")}>{emoji}</span>
+                                <span className="font-extrabold text-[10px] tabular-nums">{reactions.length}</span>
+                              </motion.button>
+                            )
+                          })}
+                        </AnimatePresence>
                       </div>
                     )}
 
@@ -343,16 +350,18 @@ export default function MessageList({
                         <Smile size={15} />
                       </button>
                       
-                      {showEmojiPicker === msg.id && (
-                        <EmojiPicker
-                          className={clsx("z-[110]", isMe ? "right-0" : "left-0")}
-                          onSelect={(emoji) => {
-                            onToggleReaction(msg.id, emoji)
-                            setShowEmojiPicker(null)
-                          }}
-                          onClose={() => setShowEmojiPicker(null)}
-                        />
-                      )}
+                      <AnimatePresence>
+                        {showEmojiPicker === msg.id && (
+                          <EmojiPicker
+                            className={clsx("z-[110]", isMe ? "right-0" : "left-0")}
+                            onSelect={(emoji) => {
+                              onToggleReaction(msg.id, emoji)
+                              setShowEmojiPicker(null)
+                            }}
+                            onClose={() => setShowEmojiPicker(null)}
+                          />
+                        )}
+                      </AnimatePresence>
                     </div>
 
                     {isMe && !isViewed && (
