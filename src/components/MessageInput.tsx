@@ -211,7 +211,7 @@ export default function MessageInput({
           <form onSubmit={handleSubmit} className="flex gap-2 items-center relative">
             <AnimatePresence>
               {isGifPickerOpen && (
-                <div ref={gifPickerRef}>
+                <div ref={gifPickerRef} className="absolute bottom-full mb-2 z-50">
                   <GifPicker
                     onSelect={handleSelectGif}
                     onClose={() => setIsGifPickerOpen(false)}
@@ -312,7 +312,7 @@ export default function MessageInput({
                     {isViewOnce ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
 
-                  {/* <button
+                  <button
                     type="button"
                     onClick={() => {
                       setIsGifPickerOpen(!isGifPickerOpen)
@@ -327,7 +327,7 @@ export default function MessageInput({
                     title="GIFs"
                   >
                     <ImageIcon size={18} />
-                  </button> */}
+                  </button>
                 </div>
               </div>
             </div>
