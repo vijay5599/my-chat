@@ -18,6 +18,32 @@ self.addEventListener('install', (event) => {
   );
 });
 
+// Listen for Push Events from the Server (Locked-App)
+self.addEventListener('push', (event) => {
+  let data = { title: 'New Message', body: 'Someone sent you a message!' };
+
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data = { title: 'New Message', body: event.data.text() };
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: data.icon || '/icon-192.png',
+    badge: '/icon-192.png',
+    tag: data.tag || 'new-message',
+    renotify: true,
+    data: data.data || {}
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
+
 self.addEventListener('fetch', (event) => {
   // Only handle GET requests
   if (event.request.method !== 'GET') return;
