@@ -199,136 +199,110 @@ export default function MessageInput({
         </div>
       )}
 
-      {/* Global Celebration Popup - Repositioned to Leftside */}
+      {/* Global Celebration Popup - Re-designed for Premium Feel */}
       <AnimatePresence>
         {showCelebrationMenu && (
           <div className='absolute bottom-full left-4 mb-4 z-[100]' ref={celebrationMenuRef}>
             <motion.div
-              initial={{ opacity: 0, y: 15, scale: 0.9, rotateX: -5 }}
+              initial={{ opacity: 0, y: 30, scale: 0.8, rotateX: -15 }}
               animate={{ opacity: 1, y: 0, scale: 1, rotateX: 0 }}
-              exit={{ opacity: 0, y: 15, scale: 0.9, rotateX: -5 }}
-              className="w-[320px] bg-white dark:bg-neutral-900 rounded-[2rem] border-2 border-emerald-500/20 shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden"
+              exit={{ opacity: 0, y: 20, scale: 0.9, rotateX: -10 }}
+              transition={{ type: 'spring', damping: 20, stiffness: 200 }}
+              className="w-[320px] bg-white/95 dark:bg-neutral-950/95 backdrop-blur-2xl rounded-[2.5rem] border border-white/20 dark:border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.5)] overflow-hidden"
             >
-              <div className="p-5 bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
-                    <PartyPopper size={20} />
+              <div className="p-7 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 text-white relative">
+                <div className="flex items-center gap-4 relative z-10">
+                  <motion.div
+                    animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.1, 1] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    className="bg-white/20 p-2.5 rounded-2xl backdrop-blur-md border border-white/20 shadow-lg"
+                  >
+                    <PartyPopper size={24} />
+                  </motion.div>
+                  <div>
+                    <h3 className="font-black text-xl tracking-tight leading-none">Celebrate!</h3>
+                    <p className="text-[10px] font-bold text-white/70 uppercase tracking-[0.2em] mt-1">Spread the good vibes</p>
                   </div>
-                  <h3 className="font-black text-lg tracking-tight">Celebrate!</h3>
                 </div>
                 <button
-                  onClick={() => setShowCelebrationMenu(false)}
-                  className="p-1.5 hover:bg-white/10 rounded-full transition-colors"
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowCelebrationMenu(false);
+                  }}
+                  className="absolute top-7 right-7 p-2 hover:bg-white/20 rounded-full transition-colors backdrop-blur-md cursor-pointer z-50"
                   title="Close"
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
+
+                {/* Decorative Elements */}
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
+                <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-pink-500/20 rounded-full blur-2xl" />
               </div>
 
-              <div className="p-6 space-y-5 bg-white dark:bg-neutral-900 border-t border-neutral-100 dark:border-neutral-800">
-                <div>
-                  <label className="text-[10px] font-black text-neutral-500 uppercase mb-2 block px-1 tracking-widest">Custom Headline (Optional)</label>
+              <div className="p-7 space-y-6 bg-white/50 dark:bg-neutral-900/50">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-neutral-400 dark:text-neutral-500 uppercase px-1 tracking-widest flex items-center gap-2">
+                    <Sparkles size={12} /> Personalized Shoutout
+                  </label>
                   <input
                     type="text"
-                    placeholder="e.g. WELL DONE TEAM! 🎉"
+                    placeholder="e.g. MISSION ACCOMPLISHED! 🎉"
                     value={celebrationText}
                     onChange={(e) => setCelebrationText(e.target.value)}
-                    className="w-full bg-neutral-50 dark:bg-neutral-800 border-none rounded-2xl px-5 py-3.5 text-sm focus:ring-4 focus:ring-emerald-500/10 focus:outline-none font-bold placeholder:text-neutral-400"
+                    className="w-full bg-neutral-100 dark:bg-white/5 border-2 border-transparent focus:border-purple-500/30 rounded-2xl px-5 py-4 text-sm focus:ring-8 focus:ring-purple-500/5 focus:outline-none font-extrabold placeholder:text-neutral-400 dark:placeholder:text-neutral-600 transition-all shadow-inner"
                     autoFocus
                   />
                 </div>
 
-                <div>
-                  <label className="text-[10px] font-black text-neutral-500 uppercase mb-2 block px-1 tracking-widest">Pick a Vibe</label>
-                  <div className="grid grid-cols-3 gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => setCelebrationMode('rainbow')}
-                      className={clsx(
-                        "flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all duration-300",
-                        celebrationMode === 'rainbow'
-                          ? "bg-emerald-500/10 border-emerald-500 text-emerald-600 ring-4 ring-emerald-500/5 shadow-sm"
-                          : "border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                      )}
-                    >
-                      <Radiation size={20} className={celebrationMode === 'rainbow' ? "text-emerald-500" : "text-neutral-400"} />
-                      <span className="text-[10px] font-black uppercase">Rainbow</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCelebrationMode('fireworks')}
-                      className={clsx(
-                        "flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all duration-300",
-                        celebrationMode === 'fireworks'
-                          ? "bg-blue-500/10 border-blue-500 text-blue-600 ring-4 ring-blue-500/5 shadow-sm"
-                          : "border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                      )}
-                    >
-                      <Sparkles size={20} className={celebrationMode === 'fireworks' ? "text-blue-500" : "text-neutral-400"} />
-                      <span className="text-[10px] font-black uppercase">F-Works</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCelebrationMode('snow')}
-                      className={clsx(
-                        "flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all duration-300",
-                        celebrationMode === 'snow'
-                          ? "bg-sky-500/10 border-sky-500 text-sky-600 ring-4 ring-sky-500/5 shadow-sm"
-                          : "border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                      )}
-                    >
-                      <Snowflake size={20} className={celebrationMode === 'snow' ? "text-sky-500" : "text-neutral-400"} />
-                      <span className="text-[10px] font-black uppercase">Snow</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCelebrationMode('confetti')}
-                      className={clsx(
-                        "flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all duration-300",
-                        celebrationMode === 'confetti'
-                          ? "bg-amber-500/10 border-amber-500 text-amber-600 ring-4 ring-amber-500/5 shadow-sm"
-                          : "border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                      )}
-                    >
-                      <PartyPopper size={20} className={celebrationMode === 'confetti' ? "text-amber-500" : "text-neutral-400"} />
-                      <span className="text-[10px] font-black uppercase">Confetti</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCelebrationMode('love')}
-                      className={clsx(
-                        "flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all duration-300",
-                        celebrationMode === 'love'
-                          ? "bg-rose-500/10 border-rose-500 text-rose-600 ring-4 ring-rose-500/5 shadow-sm"
-                          : "border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                      )}
-                    >
-                      <Heart size={20} className={celebrationMode === 'love' ? "text-rose-500" : "text-neutral-400"} />
-                      <span className="text-[10px] font-black uppercase">Love</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCelebrationMode('zap')}
-                      className={clsx(
-                        "flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all duration-300",
-                        celebrationMode === 'zap'
-                          ? "bg-yellow-500/10 border-yellow-500 text-yellow-600 ring-4 ring-yellow-500/5 shadow-sm"
-                          : "border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                      )}
-                    >
-                      <Zap size={20} className={celebrationMode === 'zap' ? "text-yellow-500" : "text-neutral-400"} />
-                      <span className="text-[10px] font-black uppercase">Zap!</span>
-                    </button>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-neutral-400 dark:text-neutral-500 uppercase px-1 tracking-widest">Select Celebration Vibe</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { id: 'rainbow', icon: Radiation, color: 'text-emerald-500', bg: 'bg-emerald-500/10', label: 'Rainbow' },
+                      { id: 'fireworks', icon: Sparkles, color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'F-Works' },
+                      { id: 'snow', icon: Snowflake, color: 'text-sky-500', bg: 'bg-sky-500/10', label: 'Snow' },
+                      { id: 'confetti', icon: PartyPopper, color: 'text-amber-500', bg: 'bg-amber-500/10', label: 'Party' },
+                      { id: 'love', icon: Heart, color: 'text-rose-500', bg: 'bg-rose-500/10', label: 'Love' },
+                      { id: 'zap', icon: Zap, color: 'text-yellow-500', bg: 'bg-yellow-500/10', label: 'Zap!' }
+                    ].map((vibe) => (
+                      <button
+                        key={vibe.id}
+                        type="button"
+                        onClick={() => setCelebrationMode(vibe.id as CelebrationMode)}
+                        className={clsx(
+                          "flex flex-col items-center gap-2 p-4 rounded-3xl border-2 transition-all duration-300 relative group overflow-hidden",
+                          celebrationMode === vibe.id
+                            ? `bg-white dark:bg-neutral-800 border-purple-500/50 shadow-xl scale-105 z-10`
+                            : "border-transparent bg-neutral-100/50 dark:bg-white/5 hover:bg-white dark:hover:bg-neutral-800 hover:border-neutral-200 dark:hover:border-neutral-700"
+                        )}
+                      >
+                        {celebrationMode === vibe.id && <motion.div layoutId="vibe-active" className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5" />}
+                        <vibe.icon size={22} className={clsx(
+                          "transition-transform duration-500 group-hover:scale-125 group-hover:rotate-12",
+                          celebrationMode === vibe.id ? vibe.color : "text-neutral-400 dark:text-neutral-600"
+                        )} />
+                        <span className={clsx(
+                          "text-[9px] font-black uppercase tracking-tighter transition-colors",
+                          celebrationMode === vibe.id ? "text-neutral-900 dark:text-neutral-100" : "text-neutral-400 dark:text-neutral-600"
+                        )}>{vibe.label}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                <button
+                <motion.button
                   type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={handleCelebrateSubmit}
-                  className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-widest text-xs rounded-2xl transition-all shadow-xl shadow-emerald-600/20 active:scale-[0.98] flex items-center justify-center gap-2 group"
+                  className="w-full py-5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black uppercase tracking-[0.2em] text-[10px] rounded-2xl transition-all shadow-2xl shadow-purple-600/30 flex items-center justify-center gap-3 group relative overflow-hidden"
                 >
-                  Let's Celebrate! <Zap size={14} className="group-hover:translate-x-0.5 transition-transform" />
-                </button>
+                  <span className="relative z-10">Ignite Celebration</span>
+                  <Zap size={14} className="relative z-10 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                </motion.button>
               </div>
             </motion.div>
           </div>
@@ -430,19 +404,19 @@ export default function MessageInput({
                   type="button"
                   onClick={() => setShowMoreActions(!showMoreActions)}
                   className={clsx(
-                    "w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-300 flex-shrink-0 sm:hidden",
+                    "w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-300 flex-shrink-0",
                     showMoreActions
                       ? "bg-indigo-500/10 text-indigo-400"
-                      : "text-neutral-400"
+                      : "text-neutral-400 hover:text-indigo-600 dark:hover:text-indigo-400"
                   )}
                   title="More actions"
                 >
                   <Plus size={20} className={clsx("transition-transform duration-300", showMoreActions && "rotate-45")} />
                 </button>
 
-                {/* Extra Actions Sub-bar (Mobile) */}
+                {/* Unified Actions Sub-bar (Mobile & Desktop) */}
                 <div className={clsx(
-                  "absolute bottom-full left-0 mb-3 flex gap-2 p-1.5 bg-white dark:bg-neutral-900 border dark:border-neutral-800 rounded-2xl shadow-xl transition-all duration-300 sm:hidden z-[60]",
+                  "absolute bottom-full left-0 mb-3 flex gap-2 p-1.5 bg-white dark:bg-neutral-900 border dark:border-neutral-800 rounded-2xl shadow-xl transition-all duration-300 z-[60]",
                   showMoreActions ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-4 scale-95 pointer-events-none"
                 )}>
                   <button
@@ -496,76 +470,11 @@ export default function MessageInput({
                   </button>
                   {/* Celebration Trigger Tool */}
                   <CelebrateButton
-                    isActive={showCelebrationMenu}
-                    onClick={() => setShowCelebrationMenu(!showCelebrationMenu)}
+                    isActive={false}
+                    onClick={() => { setShowCelebrationMenu(!showCelebrationMenu); setShowMoreActions(false); }}
                   />
                 </div>
 
-                {/* Desktop View Action Icons */}
-                <div className="hidden sm:flex items-center">
-                  <button
-                    type="button"
-                    onClick={() => setIsVoiceRecording(true)}
-                    className="w-9 h-9 flex items-center justify-center text-neutral-400 hover:text-blue-600 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-full transition-colors"
-                    title="Voice Message"
-                  >
-                    <Mic size={18} />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsViewOnce(!isViewOnce)}
-                    className={clsx(
-                      "w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200",
-                      isViewOnce
-                        ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
-                        : "text-neutral-500 hover:text-amber-600 hover:bg-neutral-100 dark:hover:bg-neutral-900"
-                    )}
-                    title="View Once"
-                  >
-                    {isViewOnce ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleImageClick}
-                    className="w-9 h-9 flex items-center justify-center text-neutral-400 hover:text-indigo-600 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-full transition-colors"
-                    title="Send Image"
-                  >
-                    <ImageIcon size={18} />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsGifPickerOpen(!isGifPickerOpen)
-                      setIsEmojiPickerOpen(false)
-                    }}
-                    className={clsx(
-                      "w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300",
-                      isGifPickerOpen
-                        ? "bg-indigo-500/10 text-indigo-400"
-                        : "text-neutral-400 hover:text-indigo-600 hover:bg-neutral-100 dark:hover:bg-neutral-900"
-                    )}
-                    title="GIFs"
-                  >
-                    <Sparkles size={18} />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsScheduleModalOpen(true)}
-                    className="w-9 h-9 flex items-center justify-center text-neutral-400 hover:text-purple-600 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-full transition-colors"
-                    title="Schedule Message"
-                  >
-                    <Clock size={18} />
-                  </button>
-
-                  <CelebrateButton
-                    isActive={showCelebrationMenu}
-                    onClick={() => setShowCelebrationMenu(!showCelebrationMenu)}
-                  />
-                </div>
               </div>
             </div>
 
@@ -634,27 +543,11 @@ function CelebrateButton({ isActive, onClick }: { isActive: boolean, onClick: ()
         onMouseLeave={() => setIsHovered(false)}
         onClick={onClick}
         whileTap={{ scale: 0.85 }}
-        transition={isActive ? {
-          boxShadow: {
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut"
-          },
-          type: "spring",
-          stiffness: 400,
-          damping: 15
-        } : {
-          type: "spring",
-          stiffness: 400,
-          damping: 15
-        }}
         className={clsx(
-          "w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl sm:rounded-full transition-colors duration-300 border",
-          isActive
-            ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20 shadow-sm"
-            : "text-neutral-400 border-transparent hover:text-indigo-600 hover:bg-neutral-100 dark:hover:bg-neutral-900"
+          "w-10 h-10 flex items-center justify-center rounded-xl",
+          isActive ? "bg-indigo-500/10 text-indigo-400" : "bg-neutral-50 dark:bg-neutral-800 text-neutral-500"
         )}
-        title="Global Celebrate"
+        title="Celebrate"
       >
         <motion.div>
           <PartyPopper size={18} />
