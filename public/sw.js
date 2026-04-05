@@ -45,12 +45,20 @@ self.addEventListener('push', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Only handle GET requests
-  if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
 
-  // Skip chrome-extension requests or other non-http schemes
-  if (!event.request.url.startsWith('http')) return;
+  // 1. Skip non-GET, non-HTTP, and dynamic routes (/chat, /api, supabase)
+  if (
+    event.request.method !== 'GET' || 
+    !event.request.url.startsWith('http') ||
+    url.pathname.startsWith('/chat') ||
+    url.pathname.startsWith('/api') ||
+    url.hostname.includes('supabase')
+  ) {
+    return;
+  }
 
+  // 2. Performance: Respond with Cache then Network for static assets
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -59,28 +67,19 @@ self.addEventListener('fetch', (event) => {
 
       return fetch(event.request)
         .then((networkResponse) => {
-          // If we have a valid response, return it
-          if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+          // Double check it's a valid response before returning
+          if (!networkResponse || networkResponse.status !== 200) {
             return networkResponse;
           }
-
-          // Optional: Clone and cache new successful requests
-          // let responseToCache = networkResponse.clone();
-          // caches.open(CACHE_NAME).then((cache) => {
-          //   cache.put(event.request, responseToCache);
-          // });
-
           return networkResponse;
         })
         .catch((error) => {
-          console.error('Fetch failed:', error);
-          // Return a fallback or just let it fail naturally if it's not a navigation
+          // If the network fails, we don't throw an error for navigation; we let it fail naturally
+          console.error('Service Worker Fetch failed:', error);
           if (event.request.mode === 'navigate') {
-            // Potential fallback for page navigation:
-            // return caches.match('/offline.html');
+            // Optional: return caches.match('/offline.html');
           }
-          // Do NOT return undefined, return the original error to let browser handle it
-          throw error;
+          return undefined; // Allow browser to show default offline page
         });
     })
   );
