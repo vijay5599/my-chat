@@ -297,6 +297,27 @@ export default function ChatBox({
               const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3')
               audio.volume = 0.5
               audio.play().catch(e => console.log('Audio play failed:', e))
+
+              // Show Browser Notification if tab is not focused
+              if (document.visibilityState === 'hidden' && Notification.permission === 'granted') {
+                const notification = new Notification(`New message from ${finalMessage.profiles?.username || 'Someone'}`, {
+                  body: finalMessage.content.length > 100 ? finalMessage.content.substring(0, 100) + '...' : finalMessage.content,
+                  icon: finalMessage.profiles?.avatar_url || '/icon-192.png',
+                  badge: '/icon-192.png',
+                  tag: roomId, // Groups notifications from the same chat
+                  renotify: true
+                } as any);
+
+                notification.onclick = () => {
+                  window.focus();
+                  notification.close();
+                };
+
+                // Vibrate for haptic feedback if supported (mobile)
+                if ('vibrate' in navigator) {
+                  navigator.vibrate([100, 50, 100]); // Short pattern: vib, pause, vib
+                }
+              }
             }
 
             setMessages((prev) => {

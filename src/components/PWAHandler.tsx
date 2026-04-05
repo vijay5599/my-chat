@@ -4,9 +4,9 @@ import { useEffect } from 'react'
 
 export default function PWAHandler() {
   useEffect(() => {
+    // 1. Service Worker Registration
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        // Unregister all existing service workers for a clean state
         navigator.serviceWorker.getRegistrations().then((registrations) => {
           for (const registration of registrations) {
             registration.unregister()
@@ -22,6 +22,17 @@ export default function PWAHandler() {
           )
         })
       })
+    }
+
+    // 2. Request Notification Permission
+    if ('Notification' in window) {
+      if (Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            console.log('Notification permission granted.')
+          }
+        })
+      }
     }
   }, [])
 
