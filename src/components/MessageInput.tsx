@@ -252,7 +252,6 @@ export default function MessageInput({
                     value={celebrationText}
                     onChange={(e) => setCelebrationText(e.target.value)}
                     className="w-full bg-neutral-100 dark:bg-white/5 border-2 border-transparent focus:border-purple-500/30 rounded-2xl px-5 py-4 text-sm focus:ring-8 focus:ring-purple-500/5 focus:outline-none font-extrabold placeholder:text-neutral-400 dark:placeholder:text-neutral-600 transition-all shadow-inner"
-                    autoFocus
                   />
                 </div>
 
