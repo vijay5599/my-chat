@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Mic, Eye, EyeOff, Smile, Send, X, Clock, Plus, PartyPopper, Sparkles, Snowflake, Radiation, Zap } from 'lucide-react'
+import { Mic, Eye, EyeOff, Smile, Send, X, Clock, Plus, PartyPopper, Sparkles, Snowflake, Radiation, Zap, Heart } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import EmojiPicker from './EmojiPicker'
 import GifPicker from './GifPicker'
@@ -263,6 +263,45 @@ export default function MessageInput({
                       <Snowflake size={20} className={celebrationMode === 'snow' ? "text-sky-500" : "text-neutral-400"} />
                       <span className="text-[10px] font-black uppercase">Snow</span>
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setCelebrationMode('confetti')}
+                      className={clsx(
+                        "flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all duration-300",
+                        celebrationMode === 'confetti'
+                          ? "bg-amber-500/10 border-amber-500 text-amber-600 ring-4 ring-amber-500/5 shadow-sm"
+                          : "border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                      )}
+                    >
+                      <PartyPopper size={20} className={celebrationMode === 'confetti' ? "text-amber-500" : "text-neutral-400"} />
+                      <span className="text-[10px] font-black uppercase">Confetti</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCelebrationMode('love')}
+                      className={clsx(
+                        "flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all duration-300",
+                        celebrationMode === 'love'
+                          ? "bg-rose-500/10 border-rose-500 text-rose-600 ring-4 ring-rose-500/5 shadow-sm"
+                          : "border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                      )}
+                    >
+                      <Heart size={20} className={celebrationMode === 'love' ? "text-rose-500" : "text-neutral-400"} />
+                      <span className="text-[10px] font-black uppercase">Love</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCelebrationMode('zap')}
+                      className={clsx(
+                        "flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all duration-300",
+                        celebrationMode === 'zap'
+                          ? "bg-yellow-500/10 border-yellow-500 text-yellow-600 ring-4 ring-yellow-500/5 shadow-sm"
+                          : "border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                      )}
+                    >
+                      <Zap size={20} className={celebrationMode === 'zap' ? "text-yellow-500" : "text-neutral-400"} />
+                      <span className="text-[10px] font-black uppercase">Zap!</span>
+                    </button>
                   </div>
                 </div>
 
@@ -415,19 +454,12 @@ export default function MessageInput({
                   >
                     <ImageIcon size={18} />
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => { setShowCelebrationMenu(!showCelebrationMenu); setShowMoreActions(false); }}
-                    className={clsx(
-                      "w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300",
-                      showCelebrationMenu
-                        ? "bg-emerald-500/10 text-emerald-500"
-                        : "bg-neutral-50 dark:bg-neutral-800 text-neutral-400"
-                    )}
-                    title="Global Celebrate"
-                  >
-                    <PartyPopper size={18} className={showCelebrationMenu ? "animate-bounce" : ""} />
-                  </button>
+                  {/* Celebration Trigger Tool */}
+                  {/* Celebration Trigger Tool */}
+                  <CelebrateButton
+                    isActive={showCelebrationMenu}
+                    onClick={() => setShowCelebrationMenu(!showCelebrationMenu)}
+                  />
                 </div>
 
                 {/* Desktop View Action Icons */}
@@ -481,21 +513,10 @@ export default function MessageInput({
                     <Clock size={18} />
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowCelebrationMenu(!showCelebrationMenu)
-                    }}
-                    className={clsx(
-                      "w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300",
-                      showCelebrationMenu
-                        ? "bg-emerald-500/10 text-emerald-500"
-                        : "text-neutral-400 hover:text-emerald-500 hover:bg-neutral-100 dark:hover:bg-neutral-900"
-                    )}
-                    title="Global Celebrate"
-                  >
-                    <PartyPopper size={18} className={showCelebrationMenu ? "animate-bounce" : ""} />
-                  </button>
+                  <CelebrateButton
+                    isActive={showCelebrationMenu}
+                    onClick={() => setShowCelebrationMenu(!showCelebrationMenu)}
+                  />
                 </div>
               </div>
             </div>
@@ -545,3 +566,102 @@ export default function MessageInput({
     </div>
   )
 }
+
+function CelebrateButton({ isActive, onClick }: { isActive: boolean, onClick: () => void }) {
+  const [isHovered, setIsHovered] = useState(false)
+
+  return (
+    <div className="relative">
+      <AnimatePresence>
+        {isHovered && (
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 pointer-events-none">
+            <FloatingEmojis />
+          </div>
+        )}
+      </AnimatePresence>
+      
+      <motion.button
+        type="button"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onClick={onClick}
+        whileTap={{ scale: 0.85 }}
+        animate={isActive ? {
+          boxShadow: [
+            "0 0 0px 0px rgba(147, 51, 234, 0)",
+            "0 0 20px 4px rgba(147, 51, 234, 0.4)",
+            "0 0 0px 0px rgba(147, 51, 234, 0)"
+          ]
+        } : {}}
+        transition={isActive ? {
+          boxShadow: {
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          },
+          type: "spring",
+          stiffness: 400,
+          damping: 15
+        } : { 
+          type: "spring", 
+          stiffness: 400, 
+          damping: 15 
+        }}
+        className={clsx(
+          "w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl sm:rounded-full transition-colors duration-300 border",
+          isActive
+            ? "bg-purple-500/10 text-purple-600 border-purple-500/20 shadow-sm"
+            : "text-neutral-400 border-transparent hover:text-purple-600 hover:bg-neutral-100 dark:hover:bg-neutral-900"
+        )}
+        title="Global Celebrate"
+      >
+        <motion.div
+          animate={isActive ? {
+            y: [0, -6, 0],
+            rotate: [0, -5, 5, 0]
+          } : {}}
+          transition={{
+            duration: 1.5,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        >
+          <PartyPopper size={18} />
+        </motion.div>
+      </motion.button>
+    </div>
+  )
+}
+
+function FloatingEmojis() {
+  const emojis = ['🎉', '✨', '🎆']
+  
+  return (
+    <div className="relative h-20 w-10 flex justify-center items-end overflow-visible">
+      {emojis.map((emoji, i) => (
+        <motion.span
+          key={i}
+          initial={{ opacity: 0, y: 0, x: 0, scale: 0.5 }}
+          animate={{ 
+            opacity: [0, 1, 1, 0], 
+            y: -60 - (Math.random() * 20),
+            x: (Math.random() - 0.5) * 30,
+            scale: [0.5, 1.2, 1, 0.8],
+            rotate: (Math.random() - 0.5) * 45
+          }}
+          transition={{ 
+            duration: 1.5 + (Math.random() * 0.5),
+            delay: i * 0.1,
+            ease: "easeOut",
+            repeat: Infinity,
+            repeatDelay: Math.random()
+          }}
+          className="absolute text-sm select-none"
+        >
+          {emoji}
+        </motion.span>
+      ))}
+    </div>
+  )
+}
+

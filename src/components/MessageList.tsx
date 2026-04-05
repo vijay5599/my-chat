@@ -325,7 +325,7 @@ export default function MessageList({
                         e.stopPropagation()
                         onReply(msg)
                       }}
-                      className="p-1.5 text-blue-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-colors"
+                      className="p-1.5 text-blue-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-all border border-slate-200 dark:border-slate-700 bg-white dark:bg-neutral-900 shadow-sm hover:scale-110 active:scale-95"
                       title="Reply"
                     >
                       <Reply size={15} className={isMe ? "" : "scale-x-[-1]"} />
@@ -337,10 +337,10 @@ export default function MessageList({
                           setShowEmojiPicker(showEmojiPicker === msg.id ? null : msg.id)
                         }}
                         className={clsx(
-                          "p-1.5 rounded-full transition-colors",
+                          "p-1.5 rounded-full transition-all border shadow-sm hover:scale-110 active:scale-95",
                           showEmojiPicker === msg.id
-                            ? "text-blue-600 bg-blue-100 dark:bg-blue-900/30"
-                            : "text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                            ? "text-amber-600 bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-500"
+                            : "text-amber-500/70 hover:text-amber-500 border-slate-200 dark:border-slate-700 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                         )}
                         title="React"
                       >
@@ -367,7 +367,7 @@ export default function MessageList({
                           e.stopPropagation()
                           onDeleteMessage(msg.id, msg.audio_url)
                         }}
-                        className="p-1.5 text-rose-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-colors"
+                        className="p-1.5 text-rose-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-all border border-slate-200 dark:border-slate-700 bg-white dark:bg-neutral-900 shadow-sm hover:scale-110 active:scale-95"
                         title="Delete message"
                       >
                         <Trash2 size={15} />

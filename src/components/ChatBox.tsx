@@ -102,6 +102,109 @@ export default function ChatBox({
         requestAnimationFrame(frame)
       }
       frame()
+    } else if (mode === 'confetti') {
+      const duration = 3 * 1000
+      const end = Date.now() + duration
+
+      const frame = () => {
+        confetti({
+          particleCount: 2,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff']
+        })
+        confetti({
+          particleCount: 2,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff']
+        })
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame)
+        }
+      }
+      frame()
+    } else if (mode === 'love') {
+      const duration = 5 * 1000
+      const end = Date.now() + duration
+
+      // Create a heart shape from SVG path
+      const heart = confetti.shapeFromPath({ 
+        path: 'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'
+      });
+
+      const frame = () => {
+        confetti({
+          particleCount: 2,
+          startVelocity: 30,
+          spread: 360,
+          origin: { x: Math.random(), y: Math.random() - 0.2 },
+          colors: ['#ff69b4', '#ff0000', '#ff1493', '#db7093'],
+          shapes: [heart],
+          scalar: randomInRange(0.5, 1.5),
+        })
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame)
+        }
+      }
+      frame()
+    } else if (mode === 'zap') {
+      const duration = 3 * 1000
+      const end = Date.now() + duration
+
+      const interval: any = setInterval(() => {
+        if (Date.now() > end) return clearInterval(interval)
+        
+        // Simulate a "strike" at a random X
+        const strikeX = Math.random();
+        
+        // Main strike bolt (very fast, sharp)
+        confetti({
+          particleCount: 50,
+          startVelocity: 90,
+          spread: 20,
+          origin: { x: strikeX, y: 0 },
+          colors: ['#00ffff', '#ffffff', '#7dd3fc', '#bae6fd'],
+          shapes: ['square'],
+          gravity: 0.2,
+          scalar: 0.4,
+          ticks: 30,
+          angle: 270 // Straight down
+        })
+
+        // Peripheral sparks
+        confetti({
+          particleCount: 30,
+          startVelocity: 30,
+          spread: 360,
+          origin: { x: strikeX, y: Math.random() * 0.5 },
+          colors: ['#ffff00', '#00ffff', '#ffffff'],
+          shapes: ['circle'],
+          gravity: 0.8,
+          scalar: 0.6,
+          ticks: 30
+        })
+
+        // Second strike immediately after for "flicker" effect
+        setTimeout(() => {
+          confetti({
+            particleCount: 20,
+            startVelocity: 40,
+            spread: 120,
+            origin: { x: strikeX, y: Math.random() * 0.4 },
+            colors: ['#ffffff', '#00ffff'],
+            shapes: ['square'],
+            gravity: 0.4,
+            scalar: 0.3,
+            ticks: 20
+          })
+        }, 100);
+
+      }, 400)
     } else {
       // Default to Rainbow
       const duration = 4 * 1000

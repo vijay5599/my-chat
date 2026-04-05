@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { RealtimeChannel } from '@supabase/supabase-js'
 
-export type CelebrationMode = 'rainbow' | 'fireworks' | 'snow'
+export type CelebrationMode = 'rainbow' | 'fireworks' | 'snow' | 'confetti' | 'love' | 'zap'
 
 interface PresenceState {
   user_id: string
@@ -37,6 +37,11 @@ export function usePresence(roomId: string, currentUserId: string, onCelebrateRe
     }
   }
 
+  const onCelebrateRef = useRef(onCelebrateReceived)
+  useEffect(() => {
+    onCelebrateRef.current = onCelebrateReceived
+  }, [onCelebrateReceived])
+
   useEffect(() => {
     const roomChannel = supabase.channel(`room_${roomId}`, {
       config: {
@@ -68,9 +73,9 @@ export function usePresence(roomId: string, currentUserId: string, onCelebrateRe
         setTypingUsers(Array.from(currentlyTypingIds))
       })
       .on('broadcast', { event: 'celebrate' }, (payload) => {
-        if (onCelebrateReceived) {
+        if (onCelebrateRef.current) {
           console.log('Received celebration:', payload.payload)
-          onCelebrateReceived(
+          onCelebrateRef.current(
             payload.payload.mode as CelebrationMode || 'rainbow',
             payload.payload.text
           )
