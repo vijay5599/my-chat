@@ -51,3 +51,11 @@ Visit `http://localhost:3000` to register an account and start chatting!
 - Tailwind CSS
 - Lucide React (Icons)
 - date-fns
+
+
+## PWA Setup Instructions
+
+- to push notifications to mobile devices, we need to use supabase functions
+```bash
+supabase functions deploy send-push --no-verify-jwt
+```
