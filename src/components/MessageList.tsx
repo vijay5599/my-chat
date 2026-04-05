@@ -38,6 +38,7 @@ export default function MessageList({
 }) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const [viewingMessage, setViewingMessage] = useState<Message | null>(null)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null) // messageId
 
   useEffect(() => {
@@ -88,10 +89,21 @@ export default function MessageList({
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black/20 max-w-[280px] group relative"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setSelectedImage(content)}
+          className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black/20 max-w-[240px] sm:max-w-[280px] group relative cursor-zoom-in"
         >
-          <img src={content} alt="Media" className="w-full h-auto block opacity-90 group-hover:opacity-100 transition-opacity" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <img 
+            src={content} 
+            alt="Media" 
+            className="w-full h-auto block opacity-90 group-hover:opacity-100 transition-opacity" 
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+             <div className="p-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-white translate-y-4 group-hover:translate-y-0 transition-all">
+                <Smile size={16} />
+             </div>
+          </div>
         </motion.div>
       )
     }
@@ -453,6 +465,41 @@ export default function MessageList({
           </div>
         </div>
       )}
+      {/* Image Preview Modal */}
+      <AnimatePresence>
+        {selectedImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelectedImage(null)}
+            className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 cursor-zoom-out"
+          >
+            <motion.button
+              type="button"
+              className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-md border border-white/10 transition-colors z-50"
+              onClick={() => setSelectedImage(null)}
+            >
+              <X size={24} />
+            </motion.button>
+            
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="relative max-w-full max-h-full flex items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={selectedImage}
+                alt="Preview"
+                className="max-w-full max-h-[90vh] rounded-2xl shadow-[0_0_80px_rgba(0,0,0,0.5)] object-contain border border-white/5"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
