@@ -29,6 +29,12 @@ serve(async (req) => {
       .neq('user_id', sender_id);
 
     if (memberError) throw memberError;
+    console.log(`Found ${members?.length || 0} other members in room ${room_id}`);
+
+    if (!members || members.length === 0) {
+      console.log('No other members to notify.');
+      return new Response(JSON.stringify({ success: true, message: 'No recipients found' }), { status: 200 });
+    }
 
     // 2. Get their push subscriptions from our new table
     const userIds = members.map(m => m.user_id);
@@ -38,6 +44,12 @@ serve(async (req) => {
       .in('user_id', userIds);
 
     if (subError) throw subError;
+    console.log(`Found ${subscriptions?.length || 0} active push subscriptions.`);
+
+    if (!subscriptions || subscriptions.length === 0) {
+      console.log('No active subscriptions found for these members.');
+      return new Response(JSON.stringify({ success: true, message: 'No subscriptions found' }), { status: 200 });
+    }
 
     // 3. Send notifications to every device
     const sendPromises = (subscriptions || []).map(sub => {
