@@ -111,6 +111,7 @@ export default function MessageInput({
       onCelebrate(celebrationMode, celebrationText.trim() || undefined)
       setCelebrationText('')
       setShowCelebrationMenu(false)
+      setCelebrationMode('rainbow')
     }
   }
 
