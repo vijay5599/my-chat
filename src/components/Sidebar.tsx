@@ -100,7 +100,7 @@ export default function Sidebar({
   }
 
   const filteredRooms = localRooms.filter(r => r.name.toLowerCase().includes(search.toLowerCase()))
-  
+
   const channels = filteredRooms.filter(r => r.type === 'group' || !r.type)
   const dms = filteredRooms.filter(r => r.type === 'direct')
 
@@ -119,7 +119,7 @@ export default function Sidebar({
           <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
             <span className="text-white font-bold text-lg select-none">M</span>
           </div>
-          <h2 className="font-bold text-lg text-slate-800 dark:text-slate-100 tracking-tight">myChat</h2>
+          <h2 className="font-bold text-lg text-slate-800 dark:text-slate-100 tracking-tight">MyChat</h2>
         </div>
         <div className="flex items-center gap-1">
           <button onClick={() => setIsCreating(true)} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors" title="Create Room">
@@ -281,10 +281,10 @@ export default function Sidebar({
                           : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50"
                       )}
                     >
-                      <Avatar 
-                        url={dmInfo.avatar} 
-                        name={dmInfo.name} 
-                        size="sm" 
+                      <Avatar
+                        url={dmInfo.avatar}
+                        name={dmInfo.name}
+                        size="sm"
                         className={clsx("shrink-0", !isActive && "ring-1 ring-slate-200 dark:ring-slate-700")}
                       />
                       <div className="flex-1 min-w-0">

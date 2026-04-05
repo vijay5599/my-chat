@@ -4,12 +4,14 @@ import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { RealtimeChannel } from '@supabase/supabase-js'
 
+export type CelebrationMode = 'rainbow' | 'fireworks' | 'snow'
+
 interface PresenceState {
   user_id: string
   typing: boolean
 }
 
-export function usePresence(roomId: string, currentUserId: string) {
+export function usePresence(roomId: string, currentUserId: string, onCelebrateReceived?: (mode: CelebrationMode, text?: string) => void) {
   const [onlineUsers, setOnlineUsers] = useState<string[]>([])
   const [typingUsers, setTypingUsers] = useState<string[]>([])
   const [channel, setChannel] = useState<RealtimeChannel | null>(null)
@@ -21,6 +23,16 @@ export function usePresence(roomId: string, currentUserId: string) {
       await channel.track({
         user_id: currentUserId,
         typing: isTyping
+      })
+    }
+  }
+
+  const celebrate = async (mode: CelebrationMode = 'rainbow', text?: string) => {
+    if (channel) {
+      await channel.send({
+        type: 'broadcast',
+        event: 'celebrate',
+        payload: { userId: currentUserId, mode, text }
       })
     }
   }
@@ -37,10 +49,10 @@ export function usePresence(roomId: string, currentUserId: string) {
     roomChannel
       .on('presence', { event: 'sync' }, () => {
         const state = roomChannel.presenceState<PresenceState>()
-        
+
         const allOnlineIds = new Set<string>()
         const currentlyTypingIds = new Set<string>()
-        
+
         for (const [key, presences] of Object.entries(state)) {
           presences.forEach((p: any) => {
             if (p.user_id) {
@@ -51,9 +63,18 @@ export function usePresence(roomId: string, currentUserId: string) {
             }
           })
         }
-        
+
         setOnlineUsers(Array.from(allOnlineIds))
         setTypingUsers(Array.from(currentlyTypingIds))
+      })
+      .on('broadcast', { event: 'celebrate' }, (payload) => {
+        if (onCelebrateReceived) {
+          console.log('Received celebration:', payload.payload)
+          onCelebrateReceived(
+            payload.payload.mode as CelebrationMode || 'rainbow',
+            payload.payload.text
+          )
+        }
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
@@ -72,5 +93,5 @@ export function usePresence(roomId: string, currentUserId: string) {
     }
   }, [roomId, currentUserId, supabase])
 
-  return { onlineUsers, typingUsers, setTyping }
+  return { onlineUsers, typingUsers, setTyping, celebrate }
 }

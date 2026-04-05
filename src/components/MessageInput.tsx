@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Mic, Eye, EyeOff, Smile, Send, X, Clock, Plus } from 'lucide-react'
+import { Mic, Eye, EyeOff, Smile, Send, X, Clock, Plus, PartyPopper, Sparkles, Snowflake, Radiation } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import EmojiPicker from './EmojiPicker'
 import GifPicker from './GifPicker'
@@ -11,11 +11,13 @@ import VoiceRecorder from './VoiceRecorder'
 import ScheduleMessageModal from './ScheduleMessageModal'
 import { Image as ImageIcon } from 'lucide-react'
 import clsx from 'clsx'
+import { CelebrationMode } from '@/lib/hooks/usePresence'
 
 export default function MessageInput({
   onSendMessage,
   onScheduleMessage,
   onTyping,
+  onCelebrate,
   members,
   currentUserId,
   replyingTo,
@@ -24,6 +26,7 @@ export default function MessageInput({
   onSendMessage: (content: string, audioBlob?: Blob, isViewOnce?: boolean) => void,
   onScheduleMessage: (content: string, scheduledFor: string) => void,
   onTyping: (isTyping: boolean) => void,
+  onCelebrate: (mode: CelebrationMode, text?: string) => void,
   members: Profile[],
   currentUserId: string,
   replyingTo?: Message | null,
@@ -37,6 +40,9 @@ export default function MessageInput({
   const [cursorPosition, setCursorPosition] = useState(0)
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false)
   const [isGifPickerOpen, setIsGifPickerOpen] = useState(false)
+  const [showCelebrationMenu, setShowCelebrationMenu] = useState(false)
+  const [celebrationText, setCelebrationText] = useState('')
+  const [celebrationMode, setCelebrationMode] = useState<CelebrationMode>('rainbow')
   const [showMoreActions, setShowMoreActions] = useState(false)
 
   const handleSelectGif = (url: string) => {
@@ -47,6 +53,7 @@ export default function MessageInput({
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const emojiPickerRef = useRef<HTMLDivElement>(null)
   const gifPickerRef = useRef<HTMLDivElement>(null)
+  const celebrationMenuRef = useRef<HTMLDivElement>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
@@ -68,7 +75,6 @@ export default function MessageInput({
     const lastAtSymbol = value.lastIndexOf('@', pos - 1)
     if (lastAtSymbol !== -1) {
       const textAfterAt = value.slice(lastAtSymbol + 1, pos)
-      // If there's a space or if it's too far back, cancel mention search
       if (textAfterAt.includes(' ') || textAfterAt.length > 20) {
         setMentionSearch(null)
       } else {
@@ -91,14 +97,22 @@ export default function MessageInput({
     setContent(newContent)
     setMentionSearch(null)
 
-    // Put focus back and move cursor after the inserted mention
     setTimeout(() => {
       if (inputRef.current) {
         inputRef.current.focus()
-        const newPos = beforeAt.length + username.length + 2 // +1 for @, +1 for space
+        const newPos = beforeAt.length + username.length + 2 
         inputRef.current.setSelectionRange(newPos, newPos)
       }
     }, 0)
+  }
+
+  const handleCelebrateSubmit = () => {
+    if (onCelebrate) {
+      // Send text only if it's not empty, otherwise send undefined
+      onCelebrate(celebrationMode, celebrationText.trim() || undefined)
+      setCelebrationText('')
+      setShowCelebrationMenu(false)
+    }
   }
 
   const filteredMembers = mentionSearch !== null
@@ -136,10 +150,17 @@ export default function MessageInput({
   }, [replyingTo])
 
   useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showCelebrationMenu && celebrationMenuRef.current && !celebrationMenuRef.current.contains(event.target as Node)) {
+        setShowCelebrationMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
     return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
     }
-  }, [])
+  }, [showCelebrationMenu])
 
   return (
     <div className="p-4 border-t dark:border-neutral-800 bg-white dark:bg-black relative pb-[calc(1rem+env(safe-area-inset-bottom))]">
@@ -161,6 +182,88 @@ export default function MessageInput({
           ))}
         </div>
       )}
+
+      {/* Global Celebration Popup */}
+      <AnimatePresence>
+        {showCelebrationMenu && (
+          <motion.div
+            ref={celebrationMenuRef}
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className="absolute bottom-full right-4 mb-4 z-[100] w-[300px] bg-white dark:bg-neutral-900 rounded-3xl border dark:border-neutral-800 shadow-2xl p-6"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-base flex items-center gap-2">
+                <PartyPopper size={18} className="text-emerald-500" />
+                Celebrate
+              </h3>
+              <button onClick={() => setShowCelebrationMenu(false)} className="text-neutral-400 hover:text-neutral-600">
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-[10px] font-bold text-neutral-500 uppercase mb-1.5 block px-1">Message (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. WELL DONE TEAM!"
+                  value={celebrationText}
+                  onChange={(e) => setCelebrationText(e.target.value)}
+                  className="w-full bg-neutral-50 dark:bg-neutral-800 border dark:border-neutral-700 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-neutral-500 uppercase mb-1.5 block px-1">Style</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCelebrationMode('rainbow')}
+                    className={clsx(
+                      "flex flex-col items-center gap-1 p-2 rounded-xl border text-[10px] font-bold transition-all",
+                      celebrationMode === 'rainbow' ? "bg-emerald-50 dark:bg-emerald-900/30 border-emerald-500 text-emerald-600" : "border-neutral-100 dark:border-neutral-800"
+                    )}
+                  >
+                    <Radiation size={16} /> Rainbow
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCelebrationMode('fireworks')}
+                    className={clsx(
+                      "flex flex-col items-center gap-1 p-2 rounded-xl border text-[10px] font-bold transition-all",
+                      celebrationMode === 'fireworks' ? "bg-blue-50 dark:bg-blue-900/30 border-blue-500 text-blue-600" : "border-neutral-100 dark:border-neutral-800"
+                    )}
+                  >
+                    <Sparkles size={16} /> Fireworks
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCelebrationMode('snow')}
+                    className={clsx(
+                      "flex flex-col items-center gap-1 p-2 rounded-xl border text-[10px] font-bold transition-all",
+                      celebrationMode === 'snow' ? "bg-sky-50 dark:bg-sky-900/30 border-sky-500 text-sky-600" : "border-neutral-100 dark:border-neutral-800"
+                    )}
+                  >
+                    <Snowflake size={16} /> Snow
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCelebrateSubmit}
+                className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-600/20 active:scale-95 mt-2"
+              >
+                Let's Celebrate!
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {isVoiceRecording ? (
         <div className="flex justify-center">
           <VoiceRecorder onAudioReady={handleAudioReady} onCancel={handleVoiceCancel} />
@@ -196,8 +299,6 @@ export default function MessageInput({
                   const end = inputRef.current?.selectionEnd || content.length
                   const newContent = content.substring(0, start) + emoji + content.substring(end)
                   setContent(newContent)
-
-                  // Focus back on input and move cursor
                   setTimeout(() => {
                     inputRef.current?.focus()
                     const newPos = start + emoji.length
@@ -230,8 +331,8 @@ export default function MessageInput({
                 className={clsx(
                   "w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-300 flex-shrink-0",
                   isEmojiPickerOpen
-                    ? "bg-amber-500/20 text-amber-400"
-                    : "text-white/40 hover:text-white hover:bg-white/5"
+                    ? "bg-blue-500/10 text-blue-500"
+                    : "text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
                 )}
                 title="Emojis"
               >
@@ -245,8 +346,8 @@ export default function MessageInput({
                   className={clsx(
                     "w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-300 flex-shrink-0 sm:hidden",
                     showMoreActions
-                      ? "bg-indigo-500/20 text-indigo-400"
-                      : "text-white/40 hover:bg-white/5"
+                      ? "bg-indigo-500/10 text-indigo-400"
+                      : "text-neutral-400"
                   )}
                   title="More actions"
                 >
@@ -287,17 +388,30 @@ export default function MessageInput({
                   </button>
                   <button
                     type="button"
-                    onClick={() => { 
-                      setIsGifPickerOpen(!isGifPickerOpen); 
+                    onClick={() => {
+                      setIsGifPickerOpen(!isGifPickerOpen);
                       setIsEmojiPickerOpen(false);
                       setShowMoreActions(false);
                     }}
                     className={clsx(
                       "w-10 h-10 flex items-center justify-center rounded-xl",
-                      isGifPickerOpen ? "bg-indigo-500/20 text-indigo-400" : "bg-neutral-50 dark:bg-neutral-800 text-neutral-500"
+                      isGifPickerOpen ? "bg-indigo-500/10 text-indigo-400" : "bg-neutral-50 dark:bg-neutral-800 text-neutral-500"
                     )}
                   >
                     <ImageIcon size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowCelebrationMenu(!showCelebrationMenu); setShowMoreActions(false); }}
+                    className={clsx(
+                      "w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300",
+                      showCelebrationMenu
+                        ? "bg-emerald-500/10 text-emerald-500"
+                        : "bg-neutral-50 dark:bg-neutral-800 text-neutral-400"
+                    )}
+                    title="Global Celebrate"
+                  >
+                    <PartyPopper size={18} className={showCelebrationMenu ? "animate-bounce" : ""} />
                   </button>
                 </div>
 
@@ -306,7 +420,7 @@ export default function MessageInput({
                   <button
                     type="button"
                     onClick={() => setIsVoiceRecording(true)}
-                    className="w-9 h-9 flex items-center justify-center text-neutral-500 hover:text-blue-600 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-full transition-colors"
+                    className="w-9 h-9 flex items-center justify-center text-neutral-400 hover:text-blue-600 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-full transition-colors"
                     title="Voice Message"
                   >
                     <Mic size={18} />
@@ -333,14 +447,41 @@ export default function MessageInput({
                       setIsEmojiPickerOpen(false)
                     }}
                     className={clsx(
-                      "w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-300",
+                      "w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300",
                       isGifPickerOpen
-                        ? "bg-indigo-500/20 text-indigo-400"
-                        : "text-white/40 hover:text-white hover:bg-white/5"
+                        ? "bg-indigo-500/10 text-indigo-400"
+                        : "text-neutral-400 hover:text-indigo-600 hover:bg-neutral-100 dark:hover:bg-neutral-900"
                     )}
                     title="GIFs"
                   >
                     <ImageIcon size={18} />
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => setIsScheduleModalOpen(true)}
+                    className="w-9 h-9 flex items-center justify-center text-neutral-400 hover:text-purple-600 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-full transition-colors"
+                    title="Schedule Message"
+                  >
+                    <Clock size={18} />
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCelebrationMenu(!showCelebrationMenu)
+                      setIsGifPickerOpen(false)
+                      setIsEmojiPickerOpen(false)
+                    }}
+                    className={clsx(
+                      "w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300",
+                      showCelebrationMenu
+                        ? "bg-emerald-500/10 text-emerald-500"
+                        : "text-neutral-400 hover:text-emerald-500 hover:bg-neutral-100 dark:hover:bg-neutral-900"
+                    )}
+                    title="Global Celebrate"
+                  >
+                    <PartyPopper size={18} className={showCelebrationMenu ? "animate-bounce" : ""} />
                   </button>
                 </div>
               </div>
@@ -353,27 +494,27 @@ export default function MessageInput({
               onChange={handleChange}
               placeholder={isViewOnce ? "Type a secret message..." : "Type a message..."}
               className={clsx(
-                "flex-1 min-w-0 h-11 rounded-2xl px-4 border transition-all duration-300 text-sm placeholder:text-white/20 text-white focus:outline-none relative z-10",
+                "flex-1 min-w-0 h-11 rounded-2xl px-4 border transition-all duration-300 text-sm focus:outline-none relative z-10",
                 !isViewOnce
-                  ? "bg-white/5 border-white/10 focus:bg-white/10 focus:border-blue-500/50 focus:ring400/50 focus:ring-4 focus:ring-sky-500/15"
-                  : "bg-amber-500/5 border-amber-600/20 focus:border-amber-500/50 focus:ring-4 focus:ring-amber-500/20 placeholder:text-amber-600/30"
+                  ? "bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10"
+                  : "bg-amber-50 dark:bg-amber-900/10 border-amber-500/30 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 placeholder:text-amber-600/30"
               )}
             />
             <button
               type="submit"
               disabled={!content.trim()}
               className={clsx(
-                "w-11 h-11 flex-shrink-0 rounded-2xl text-sm font-medium disabled:opacity-30 transition-all duration-500 shadow-xl active:scale-95 flex items-center justify-center",
-                isViewOnce ? "bg-gradient-to-br from-amber-500 to-orange-600 text-white" : "bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20"
+                "w-11 h-11 flex-shrink-0 rounded-2xl text-sm font-medium disabled:opacity-30 transition-all duration-500 active:scale-95 flex items-center justify-center",
+                isViewOnce ? "bg-amber-600 text-white" : "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
               )}
               title="Send message"
             >
-              <Send size={18} className="drop-shadow-glow" />
+              <Send size={18} />
             </button>
           </form>
           {isViewOnce && (
             <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium px-12 animate-in fade-in slide-in-from-top-1 duration-200">
-              Message will disappear after one view.
+              This message will be redacted permanently after one view.
             </p>
           )}
 

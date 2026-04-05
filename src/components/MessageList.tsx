@@ -8,10 +8,10 @@ import clsx from 'clsx'
 import { Avatar } from './Avatar'
 import { Mic, Trash2, Eye, EyeOff, X, AlertTriangle, Reply, Smile } from 'lucide-react'
 import EmojiPicker from './EmojiPicker'
+import { CelebrationMode } from '@/lib/hooks/usePresence'
 
 const isEmojiOnly = (str: string) => {
   // Simple check for single emoji (including multi-char ones like family)
-  // Most emojis are within a certain range, but we can also just check if it's one 'grapheme'
   const emojiRegex = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g;
   const matches = str.match(emojiRegex);
   return matches && matches.length === 1 && str.trim() === matches[0];
@@ -47,12 +47,9 @@ export default function MessageList({
   // Handle click outside to close emoji picker
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (showEmojiPicker) {
-        const target = event.target as HTMLElement
-        // Check if click is outside the picker and the trigger button
-        if (!target.closest('.emoji-picker-container')) {
-          setShowEmojiPicker(null)
-        }
+      const target = event.target as HTMLElement
+      if (showEmojiPicker && !target.closest('.emoji-picker-container')) {
+        setShowEmojiPicker(null)
       }
     }
 
@@ -77,11 +74,11 @@ export default function MessageList({
     if (!content) return null
 
     const isMediaUrl = (url: string) => {
-      return url.match(/\.(gif|jpe?g|png|webp|svg)(\?.*)?$/i) || 
-             url.includes('giphy.com/media/') || 
-             url.includes('media.giphy.com/') ||
-             url.includes('tenor.com/view/') ||
-             url.includes('media.tenor.com/');
+      return url.match(/\.(gif|jpe?g|png|webp|svg)(\?.*)?$/i) ||
+        url.includes('giphy.com/media/') ||
+        url.includes('media.giphy.com/') ||
+        url.includes('tenor.com/view/') ||
+        url.includes('media.tenor.com/');
     }
 
     if (isMediaUrl(content)) {
@@ -115,9 +112,9 @@ export default function MessageList({
 
     const formatText = (text: string) => {
       const bits = text.split(emojiRegex);
-      return bits.map((bit, idx) => 
-        emojiRegex.test(bit) 
-          ? <span key={idx} className="living-emoji">{bit}</span> 
+      return bits.map((bit, idx) =>
+        emojiRegex.test(bit)
+          ? <span key={idx} className="living-emoji">{bit}</span>
           : bit
       );
     };
@@ -151,7 +148,7 @@ export default function MessageList({
   }
 
   return (
-    <div className="flex-1 min-w-[300px] overflow-y-auto p-1 space-y-4 relative">
+    <div className="flex-1 min-w-[300px] overflow-y-auto p-1 space-y-4 relative text-neutral-800 dark:text-neutral-200">
       {messages.length === 0 ? (
         <div className="text-center text-neutral-500 mt-10">
           No messages yet. Be the first to say hi!
@@ -176,19 +173,19 @@ export default function MessageList({
               <div
                 className={clsx('flex flex-col min-w-0 w-full max-w-[80%] sm:max-w-[85%] md:max-w-[73%] lg:max-w-[67%]', isMe ? 'items-end' : 'items-start')}
               >
-                <div className={clsx('flex items-center gap-x-2 gap-y-1 flex-wrap', isMe ? 'flex-row-reverse' : 'flex-row')}>
+                <div className={clsx('flex items-center gap-2 flex-wrap', isMe ? 'flex-row-reverse' : 'flex-row')}>
                   <div
                     className={clsx(
                       'rounded-2xl px-4 py-2 text-sm relative transition-all duration-200 shadow-sm break-words whitespace-pre-wrap overflow-hidden min-w-0 flex-shrink',
                       isMe
                         ? (isViewOnce
                           ? (isViewed ? 'bg-neutral-100 dark:bg-neutral-900 text-neutral-400 border border-neutral-200 dark:border-neutral-800 rounded-tr-none' : 'bg-amber-600 text-white rounded-tr-none ring-2 ring-amber-400/30')
-                          : 'bg-blue-600 text-white rounded-tr-none')
+                          : 'bg-blue-600 text-white rounded-tr-none shadow-md shadow-blue-500/20')
                         : (isViewOnce
                           ? (isViewed
                             ? 'bg-neutral-50 dark:bg-neutral-900/50 text-neutral-400 border border-neutral-200 dark:border-neutral-800 rounded-tl-none italic'
                             : 'bg-amber-100 dark:bg-amber-900/30 border-2 border-amber-400/50 text-amber-900 dark:text-amber-100 rounded-tl-none cursor-pointer hover:scale-[1.02] active:scale-[0.98]')
-                          : 'bg-white/90 dark:bg-neutral-800/90 text-slate-800 dark:text-slate-100 rounded-tl-none border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm')
+                          : 'bg-white dark:bg-neutral-800 text-slate-800 dark:text-slate-100 rounded-tl-none border border-slate-200 dark:border-slate-700 backdrop-blur-sm')
                     )}
                     onClick={() => isViewOnce && !isMe && !isViewed && setViewingMessage(msg)}
                   >
@@ -198,7 +195,7 @@ export default function MessageList({
                         "mb-2 p-2 rounded-lg border-l-4 text-[11px] line-clamp-2 max-w-full truncate",
                         isMe
                           ? "bg-blue-700/30 border-blue-400 text-blue-100"
-                          : "bg-neutral-300/50 dark:bg-neutral-700/50 border-neutral-400 text-neutral-500"
+                          : "bg-neutral-200 dark:bg-neutral-700 border-neutral-400 text-neutral-500"
                       )}>
                         <p className="font-bold opacity-80 mb-0.5">
                           {msg.replied_message.profiles?.username || 'User'}
@@ -222,12 +219,12 @@ export default function MessageList({
                       isViewed ? (
                         <div className="flex items-center gap-2 py-1 opacity-60">
                           <EyeOff size={14} className="text-neutral-400" />
-                          <span>this is once view message</span>
+                          <span>Message viewed and redacted</span>
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 py-1">
                           <Eye size={16} className="text-amber-600 dark:text-amber-400" />
-                          <span className="font-semibold italic">View-Once Message</span>
+                          <span className="font-semibold italic">Tap to view secret message</span>
                         </div>
                       )
                     ) : isViewOnce && isMe && isViewed ? (
@@ -240,12 +237,12 @@ export default function MessageList({
                         {msg.audio_url && (
                           <div className={clsx(
                             'mb-2 rounded-xl p-3 flex flex-col gap-2',
-                            isMe ? 'bg-blue-500/30' : 'bg-neutral-300 dark:bg-neutral-700'
+                            isMe ? 'bg-blue-500/30' : 'bg-neutral-100 dark:bg-neutral-700'
                           )}>
                             <div className="flex items-center gap-2">
                               <div className={clsx(
                                 'p-2 rounded-full',
-                                isMe ? 'bg-blue-400/30' : 'bg-neutral-400/30'
+                                isMe ? 'bg-blue-400/30' : 'bg-neutral-200 dark:bg-neutral-600'
                               )}>
                                 <Mic size={16} className={isMe ? 'text-blue-100' : 'text-neutral-600 dark:text-neutral-300'} />
                               </div>
@@ -292,10 +289,10 @@ export default function MessageList({
                                   onToggleReaction(msg.id, emoji)
                                 }}
                                 className={clsx(
-                                  "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs transition-all border shadow-sm backdrop-blur-[2px]",
+                                  "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs transition-all border shadow-sm",
                                   hasReacted
-                                    ? "bg-blue-100/80 dark:bg-blue-600/30 border-blue-300 dark:border-blue-500 text-blue-800 dark:text-blue-100"
-                                    : "bg-white/60 dark:bg-neutral-800/60 border-neutral-200/50 dark:border-neutral-700/50 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700"
+                                    ? "bg-blue-100 dark:bg-blue-600/30 border-blue-300 dark:border-blue-500 text-blue-800 dark:text-blue-100"
+                                    : "bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700"
                                 )}
                                 title={reactions.map(r => r.profiles?.username).join(', ')}
                               >
@@ -321,14 +318,14 @@ export default function MessageList({
                     </div>
                   </div>
 
-                  {/* Actions (Reply / Delete) */}
+                  {/* Actions (Reply / React / Delete) */}
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300 flex-shrink-0">
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
                         onReply(msg)
                       }}
-                      className="p-1.5 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-all active:scale-125 shadow-sm bg-white/80 dark:bg-neutral-800/80 backdrop-blur-sm border dark:border-neutral-700"
+                      className="p-1.5 text-blue-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-colors"
                       title="Reply"
                     >
                       <Reply size={15} className={isMe ? "" : "scale-x-[-1]"} />
@@ -340,16 +337,16 @@ export default function MessageList({
                           setShowEmojiPicker(showEmojiPicker === msg.id ? null : msg.id)
                         }}
                         className={clsx(
-                          "p-1.5 rounded-full transition-all active:scale-125 shadow-sm bg-white/80 dark:bg-neutral-800/80 backdrop-blur-sm border dark:border-neutral-700",
+                          "p-1.5 rounded-full transition-colors",
                           showEmojiPicker === msg.id
-                            ? "text-blue-600 bg-blue-50 dark:bg-blue-900/30 border-blue-200"
-                            : "text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/30"
+                            ? "text-blue-600 bg-blue-100 dark:bg-blue-900/30"
+                            : "text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                         )}
                         title="React"
                       >
                         <Smile size={15} />
                       </button>
-                      
+
                       <AnimatePresence>
                         {showEmojiPicker === msg.id && (
                           <EmojiPicker
@@ -370,7 +367,7 @@ export default function MessageList({
                           e.stopPropagation()
                           onDeleteMessage(msg.id, msg.audio_url)
                         }}
-                        className="p-1.5 text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-full transition-all active:scale-125 shadow-sm bg-white/80 dark:bg-neutral-800/80 backdrop-blur-sm border dark:border-neutral-700"
+                        className="p-1.5 text-rose-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-colors"
                         title="Delete message"
                       >
                         <Trash2 size={15} />
@@ -390,38 +387,40 @@ export default function MessageList({
 
       {/* View Once Overlay */}
       {viewingMessage && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
           <div className="bg-white dark:bg-neutral-900 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl border border-amber-500/30 animate-in zoom-in-95 duration-300">
-            <div className="bg-amber-600 px-6 py-4 flex items-center justify-between text-white">
-              <div className="flex items-center gap-2">
-                <AlertTriangle size={20} />
-                <h3 className="font-bold">Secret Message</h3>
+            <div className="bg-amber-600 px-6 py-5 flex items-center justify-between text-white">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-xl">
+                  <AlertTriangle size={24} />
+                </div>
+                <h3 className="font-bold text-lg">Secret View-Once Message</h3>
               </div>
               <button
                 onClick={handleCloseView}
-                className="p-1 hover:bg-white/20 rounded-full transition-colors"
-                title="Close"
+                className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                title="Close and Redact"
               >
-                <X size={24} />
+                <X size={28} />
               </button>
             </div>
 
             <div className="p-8">
-              <div className="flex items-center gap-3 mb-6">
+              <div className="flex items-center gap-4 mb-8">
                 <Avatar
                   url={viewingMessage.profiles?.avatar_url}
                   name={viewingMessage.profiles?.username}
                   size="sm"
                 />
                 <div>
-                  <p className="text-sm font-bold">{viewingMessage.profiles?.username}</p>
-                  <p className="text-[10px] text-neutral-500">{format(new Date(viewingMessage.created_at), 'MMM d, h:mm a')}</p>
+                  <p className="text-base font-bold dark:text-white">{viewingMessage.profiles?.username}</p>
+                  <p className="text-xs text-neutral-500">{format(new Date(viewingMessage.created_at), 'MMM d, h:mm a')}</p>
                 </div>
               </div>
 
-              <div className="bg-neutral-50 dark:bg-neutral-800/50 rounded-2xl p-6 mb-6">
+              <div className="bg-neutral-50 dark:bg-neutral-800 p-8 rounded-2xl mb-8 border dark:border-neutral-700 min-h-[120px] flex flex-col justify-center">
                 {viewingMessage.audio_url && (
-                  <div className="mb-4">
+                  <div className="mb-6">
                     <audio
                       src={viewingMessage.audio_url}
                       controls
@@ -430,19 +429,23 @@ export default function MessageList({
                     />
                   </div>
                 )}
-                {viewingMessage.content && renderMessageContent(viewingMessage.content, viewingMessage.user_id === currentUserId)}
+                {viewingMessage.content && (
+                  <div className="text-lg dark:text-neutral-100 whitespace-pre-wrap break-words italic leading-relaxed text-center font-serif">
+                    "{viewingMessage.content}"
+                  </div>
+                )}
               </div>
 
-              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs font-semibold bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-200 dark:border-amber-900/30">
-                <AlertTriangle size={16} />
-                <p>This message will be redacted permanently after you close this view.</p>
+              <div className="flex items-start gap-3 text-amber-700 dark:text-amber-400 text-xs font-semibold bg-amber-50 dark:bg-amber-900/30 p-5 rounded-2xl border border-amber-200 dark:border-amber-900/50">
+                <AlertTriangle size={20} className="flex-shrink-0 mt-0.5" />
+                <p className="leading-relaxed">IMPORTANT: This message is for your eyes only. It will be permanently redacted from our servers and your device once you click the button below or leave this view.</p>
               </div>
 
               <button
                 onClick={handleCloseView}
-                className="w-full mt-8 py-3 bg-neutral-900 dark:bg-white text-white dark:text-black font-bold rounded-xl hover:opacity-90 transition-opacity"
+                className="w-full mt-10 py-5 bg-neutral-900 dark:bg-white text-white dark:text-black font-black uppercase tracking-widest text-sm rounded-2xl hover:opacity-90 active:scale-[0.98] transition-all shadow-xl shadow-black/10 dark:shadow-white/10"
               >
-                I understand, close it
+                Done, redact it now
               </button>
             </div>
           </div>

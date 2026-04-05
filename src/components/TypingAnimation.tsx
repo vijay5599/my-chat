@@ -1,23 +1,43 @@
 'use client'
 
-export function TypingAnimation({ names = [] }: { names?: string[] }) {
-  const getLabel = () => {
-    if (names.length === 0) return 'Several people are typing'
-    if (names.length === 1) return `${names[0]} is typing...`
-    if (names.length === 2) return `${names[0]} and ${names[1]} are typing...`
-    return `${names[0]}, ${names[1]} and ${names.length - 2} others are typing...`
-  }
+import { motion } from 'framer-motion'
+
+export function TypingAnimation({ names }: { names: string[] }) {
+  if (names.length === 0) return null
+
+  const text = names.length === 1
+    ? `${names[0]} IS TYPING...`
+    : names.length === 2
+      ? `${names[0]} & ${names[1]} ARE TYPING...`
+      : 'SEVERAL PEOPLE ARE TYPING...'
 
   return (
-    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100/50 dark:bg-neutral-800/50 rounded-2xl rounded-bl-sm w-fit border border-neutral-200 dark:border-neutral-700 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div className="flex gap-1 items-center mr-1">
-        <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-        <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-        <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce"></span>
+    <motion.div
+      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+      className="inline-flex items-center gap-3 px-4 py-2 bg-white/10 dark:bg-black/30 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-full shadow-lg"
+    >
+      <div className="flex gap-1">
+        {[0, 1, 2].map((i) => (
+          <motion.div
+            key={i}
+            animate={{
+              scale: [1, 1.3, 1],
+              opacity: [0.4, 1, 0.4]
+            }}
+            transition={{
+              duration: 0.8,
+              repeat: Infinity,
+              delay: i * 0.15
+            }}
+            className="w-1.5 h-1.5 bg-indigo-500 dark:bg-indigo-400 rounded-full"
+          />
+        ))}
       </div>
-      <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider whitespace-nowrap">
-        {getLabel()}
+      <span className="text-[10px] font-black lowercase tracking-widest text-green-700 dark:text-green-300 leading-none">
+        {text}
       </span>
-    </div>
+    </motion.div>
   )
 }
