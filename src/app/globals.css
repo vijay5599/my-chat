@@ -69,9 +69,11 @@ body::-webkit-scrollbar-track {
 }
 
 button,
-input,
-textarea,
-select {
+a,
+[role="button"],
+input[type="button"],
+input[type="submit"] {
+  cursor: pointer;
   transition: all .2s ease;
   font: inherit;
 }

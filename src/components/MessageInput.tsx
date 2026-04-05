@@ -285,6 +285,20 @@ export default function MessageInput({
                   >
                     <Clock size={18} />
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => { 
+                      setIsGifPickerOpen(!isGifPickerOpen); 
+                      setIsEmojiPickerOpen(false);
+                      setShowMoreActions(false);
+                    }}
+                    className={clsx(
+                      "w-10 h-10 flex items-center justify-center rounded-xl",
+                      isGifPickerOpen ? "bg-indigo-500/20 text-indigo-400" : "bg-neutral-50 dark:bg-neutral-800 text-neutral-500"
+                    )}
+                  >
+                    <ImageIcon size={18} />
+                  </button>
                 </div>
 
                 {/* Desktop View Action Icons */}
