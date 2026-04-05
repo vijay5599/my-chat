@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Mic, Eye, EyeOff, Smile, Send, X, Clock, Plus, PartyPopper, Sparkles, Snowflake, Radiation } from 'lucide-react'
+import { Mic, Eye, EyeOff, Smile, Send, X, Clock, Plus, PartyPopper, Sparkles, Snowflake, Radiation, Zap } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import EmojiPicker from './EmojiPicker'
 import GifPicker from './GifPicker'
@@ -100,7 +100,7 @@ export default function MessageInput({
     setTimeout(() => {
       if (inputRef.current) {
         inputRef.current.focus()
-        const newPos = beforeAt.length + username.length + 2 
+        const newPos = beforeAt.length + username.length + 2
         inputRef.current.setSelectionRange(newPos, newPos)
       }
     }, 0)
@@ -108,7 +108,6 @@ export default function MessageInput({
 
   const handleCelebrateSubmit = () => {
     if (onCelebrate) {
-      // Send text only if it's not empty, otherwise send undefined
       onCelebrate(celebrationMode, celebrationText.trim() || undefined)
       setCelebrationText('')
       setShowCelebrationMenu(false)
@@ -183,84 +182,100 @@ export default function MessageInput({
         </div>
       )}
 
-      {/* Global Celebration Popup */}
+      {/* Global Celebration Popup - Repositioned to Leftside */}
       <AnimatePresence>
         {showCelebrationMenu && (
-          <motion.div
-            ref={celebrationMenuRef}
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="absolute bottom-full right-4 mb-4 z-[100] w-[300px] bg-white dark:bg-neutral-900 rounded-3xl border dark:border-neutral-800 shadow-2xl p-6"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-base flex items-center gap-2">
-                <PartyPopper size={18} className="text-emerald-500" />
-                Celebrate
-              </h3>
-              <button onClick={() => setShowCelebrationMenu(false)} className="text-neutral-400 hover:text-neutral-600">
-                <X size={18} />
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="text-[10px] font-bold text-neutral-500 uppercase mb-1.5 block px-1">Message (Optional)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. WELL DONE TEAM!"
-                  value={celebrationText}
-                  onChange={(e) => setCelebrationText(e.target.value)}
-                  className="w-full bg-neutral-50 dark:bg-neutral-800 border dark:border-neutral-700 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                  autoFocus
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-neutral-500 uppercase mb-1.5 block px-1">Style</label>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setCelebrationMode('rainbow')}
-                    className={clsx(
-                      "flex flex-col items-center gap-1 p-2 rounded-xl border text-[10px] font-bold transition-all",
-                      celebrationMode === 'rainbow' ? "bg-emerald-50 dark:bg-emerald-900/30 border-emerald-500 text-emerald-600" : "border-neutral-100 dark:border-neutral-800"
-                    )}
-                  >
-                    <Radiation size={16} /> Rainbow
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCelebrationMode('fireworks')}
-                    className={clsx(
-                      "flex flex-col items-center gap-1 p-2 rounded-xl border text-[10px] font-bold transition-all",
-                      celebrationMode === 'fireworks' ? "bg-blue-50 dark:bg-blue-900/30 border-blue-500 text-blue-600" : "border-neutral-100 dark:border-neutral-800"
-                    )}
-                  >
-                    <Sparkles size={16} /> Fireworks
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCelebrationMode('snow')}
-                    className={clsx(
-                      "flex flex-col items-center gap-1 p-2 rounded-xl border text-[10px] font-bold transition-all",
-                      celebrationMode === 'snow' ? "bg-sky-50 dark:bg-sky-900/30 border-sky-500 text-sky-600" : "border-neutral-100 dark:border-neutral-800"
-                    )}
-                  >
-                    <Snowflake size={16} /> Snow
-                  </button>
+          <div className='absolute bottom-full left-4 mb-4 z-[100]' ref={celebrationMenuRef}>
+            <motion.div
+              initial={{ opacity: 0, y: 15, scale: 0.9, rotateX: -5 }}
+              animate={{ opacity: 1, y: 0, scale: 1, rotateX: 0 }}
+              exit={{ opacity: 0, y: 15, scale: 0.9, rotateX: -5 }}
+              className="w-[320px] bg-white dark:bg-neutral-900 rounded-[2rem] border-2 border-emerald-500/20 shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden"
+            >
+              <div className="p-5 bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
+                    <PartyPopper size={20} />
+                  </div>
+                  <h3 className="font-black text-lg tracking-tight">Celebrate!</h3>
                 </div>
+                <button
+                  onClick={() => setShowCelebrationMenu(false)}
+                  className="p-1.5 hover:bg-white/10 rounded-full transition-colors"
+                  title="Close"
+                >
+                  <X size={20} />
+                </button>
               </div>
 
-              <button
-                type="button"
-                onClick={handleCelebrateSubmit}
-                className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-600/20 active:scale-95 mt-2"
-              >
-                Let's Celebrate!
-              </button>
-            </div>
-          </motion.div>
+              <div className="p-6 space-y-5 bg-white dark:bg-neutral-900 border-t border-neutral-100 dark:border-neutral-800">
+                <div>
+                  <label className="text-[10px] font-black text-neutral-500 uppercase mb-2 block px-1 tracking-widest">Custom Headline (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. WELL DONE TEAM! 🎉"
+                    value={celebrationText}
+                    onChange={(e) => setCelebrationText(e.target.value)}
+                    className="w-full bg-neutral-50 dark:bg-neutral-800 border-none rounded-2xl px-5 py-3.5 text-sm focus:ring-4 focus:ring-emerald-500/10 focus:outline-none font-bold placeholder:text-neutral-400"
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black text-neutral-500 uppercase mb-2 block px-1 tracking-widest">Pick a Vibe</label>
+                  <div className="grid grid-cols-3 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setCelebrationMode('rainbow')}
+                      className={clsx(
+                        "flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all duration-300",
+                        celebrationMode === 'rainbow'
+                          ? "bg-emerald-500/10 border-emerald-500 text-emerald-600 ring-4 ring-emerald-500/5 shadow-sm"
+                          : "border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                      )}
+                    >
+                      <Radiation size={20} className={celebrationMode === 'rainbow' ? "text-emerald-500" : "text-neutral-400"} />
+                      <span className="text-[10px] font-black uppercase">Rainbow</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCelebrationMode('fireworks')}
+                      className={clsx(
+                        "flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all duration-300",
+                        celebrationMode === 'fireworks'
+                          ? "bg-blue-500/10 border-blue-500 text-blue-600 ring-4 ring-blue-500/5 shadow-sm"
+                          : "border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                      )}
+                    >
+                      <Sparkles size={20} className={celebrationMode === 'fireworks' ? "text-blue-500" : "text-neutral-400"} />
+                      <span className="text-[10px] font-black uppercase">F-Works</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCelebrationMode('snow')}
+                      className={clsx(
+                        "flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all duration-300",
+                        celebrationMode === 'snow'
+                          ? "bg-sky-500/10 border-sky-500 text-sky-600 ring-4 ring-sky-500/5 shadow-sm"
+                          : "border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                      )}
+                    >
+                      <Snowflake size={20} className={celebrationMode === 'snow' ? "text-sky-500" : "text-neutral-400"} />
+                      <span className="text-[10px] font-black uppercase">Snow</span>
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleCelebrateSubmit}
+                  className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-widest text-xs rounded-2xl transition-all shadow-xl shadow-emerald-600/20 active:scale-[0.98] flex items-center justify-center gap-2 group"
+                >
+                  Let's Celebrate! <Zap size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
@@ -456,7 +471,7 @@ export default function MessageInput({
                   >
                     <ImageIcon size={18} />
                   </button>
-                  
+
                   <button
                     type="button"
                     onClick={() => setIsScheduleModalOpen(true)}
@@ -465,13 +480,11 @@ export default function MessageInput({
                   >
                     <Clock size={18} />
                   </button>
-                  
+
                   <button
                     type="button"
                     onClick={() => {
                       setShowCelebrationMenu(!showCelebrationMenu)
-                      setIsGifPickerOpen(false)
-                      setIsEmojiPickerOpen(false)
                     }}
                     className={clsx(
                       "w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300",
