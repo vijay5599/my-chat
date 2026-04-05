@@ -62,6 +62,27 @@ self.addEventListener('fetch', (event) => {
 
 
 // Self-activating to ensure new PWA settings apply immediately
+// Self-activating to ensure new PWA settings apply immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
+});
+
+// Handle Notification Click
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // If a window is already open, focus it
+      for (const client of clientList) {
+        if (client.url.includes('/chat') && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // If no window is open, open the app
+      if (self.clients.openWindow) {
+        return self.clients.openWindow('/chat');
+      }
+    })
+  );
 });

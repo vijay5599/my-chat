@@ -298,20 +298,18 @@ export default function ChatBox({
               audio.volume = 0.5
               audio.play().catch(e => console.log('Audio play failed:', e))
 
-              // Show Browser Notification if tab is not focused
-              if (document.visibilityState === 'hidden' && Notification.permission === 'granted') {
-                const notification = new Notification(`New message from ${finalMessage.profiles?.username || 'Someone'}`, {
-                  body: finalMessage.content.length > 100 ? finalMessage.content.substring(0, 100) + '...' : finalMessage.content,
-                  icon: finalMessage.profiles?.avatar_url || '/icon-192.png',
-                  badge: '/icon-192.png',
-                  tag: roomId, // Groups notifications from the same chat
-                  renotify: true
-                } as any);
-
-                notification.onclick = () => {
-                  window.focus();
-                  notification.close();
-                };
+              // Show Browser Notification via Service Worker (Most reliable way)
+              if (Notification.permission === 'granted' && 'serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then((registration) => {
+                  registration.showNotification(`New message from ${finalMessage.profiles?.username || 'Someone'}`, {
+                    body: finalMessage.content.length > 100 ? finalMessage.content.substring(0, 100) + '...' : finalMessage.content,
+                    icon: finalMessage.profiles?.avatar_url || '/icon-192.png',
+                    badge: '/icon-192.png',
+                    tag: roomId, // Groups notifications from the same chat
+                    renotify: true,
+                    data: { roomId } // Pass room ID for clicking
+                  } as any);
+                });
 
                 // Vibrate for haptic feedback if supported (mobile)
                 if ('vibrate' in navigator) {
