@@ -21,7 +21,14 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ""
     );
 
-    // 1. Get all room members (excluding the sender)
+    // 1. Get sender's profile info
+    const { data: sender } = await supabase
+      .from('profiles')
+      .select('username, avatar_url')
+      .eq('id', sender_id)
+      .single();
+
+    // 2. Get all room members (excluding the sender)
     const { data: members, error: memberError } = await supabase
       .from('room_members')
       .select('user_id')
@@ -36,7 +43,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: true, message: 'No recipients found' }), { status: 200 });
     }
 
-    // 2. Get their push subscriptions from our new table
+    // 3. Get their push subscriptions
     const userIds = members.map(m => m.user_id);
     const { data: subscriptions, error: subError } = await supabase
       .from('push_subscriptions')
@@ -51,21 +58,22 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: true, message: 'No subscriptions found' }), { status: 200 });
     }
 
-    // 3. Send notifications to every device
+    // 4. Send notifications to every device
     const sendPromises = (subscriptions || []).map(sub => {
+      const iconUrl = sender?.avatar_url || 'https://puqyammoifaescdhnufl.supabase.co/storage/v1/object/public/voice-messages/icon-192.png';
+      
       return webpush.sendNotification(
         sub.subscription,
         JSON.stringify({
-          title: `New Message`,
+          title: `Message from ${sender?.username || 'Someone'}`,
           body: content.length > 50 ? content.substring(0, 50) + '...' : content,
           tag: room_id,
-          icon: '/icon-192.png',
-          badge: '/icon-192.png',
+          icon: iconUrl,
+          badge: 'https://puqyammoifaescdhnufl.supabase.co/storage/v1/object/public/voice-messages/icon-192.png',
           data: { roomId: room_id }
         })
       ).catch(err => {
         console.error('Push error for one subscriber:', err);
-        // If the subscription is gone (410 Gone / 404), we should ideally remove it here
       });
     });
 
