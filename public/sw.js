@@ -1,16 +1,13 @@
-const CACHE_NAME = 'my-chat-v1';
+const CACHE_NAME = 'my-chat-v2';
 const ASSETS_TO_CACHE = [
   '/login',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+  '/manifest.json'
 ];
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting(); // Force update
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      // Use standard fetch and manually check for opaque/redirected responses if needed
-      // but simpler to just use cache.addAll and ensure URLs are public.
       return cache.addAll(ASSETS_TO_CACHE).catch(err => {
         console.error('Initial caching failed:', err);
       });
