@@ -69,7 +69,7 @@ serve(async (req) => {
           body: content.length > 50 ? content.substring(0, 50) + '...' : content,
           tag: room_id,
           icon: iconUrl,
-          badge: 'https://puqyammoifaescdhnufl.supabase.co/storage/v1/object/public/voice-messages/badge-icon.png?v=1',
+          badge: 'https://img.icons8.com/m_outlined/512/FFFFFF/speech-bubble.png',
           data: { roomId: room_id }
         })
       ).catch(err => {
