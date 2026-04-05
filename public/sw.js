@@ -33,7 +33,7 @@ self.addEventListener('push', (event) => {
   const options = {
     body: data.body,
     icon: data.icon || '/icon-192.png',
-    badge: '/icon-192.png',
+    badge: data.badge || '/icon-192.png',
     tag: data.tag || 'new-message',
     renotify: true,
     data: data.data || {}
