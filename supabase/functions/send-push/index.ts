@@ -2,8 +2,8 @@ import { serve } from "https://deno.land/std@0.131.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import webpush from "https://esm.sh/web-push@3.6.7";
 
-const VAPID_PUBLIC_KEY = "BPZhvCeHMKD2BRn25uDzzYVExpVBjdhnm39KMd2bv0cHQ7D5IXXXPm2aONz0dr6uGZ1pJ0ftRoA52YA8wkuKLGs";
-const VAPID_PRIVATE_KEY = "sjTHgVqPWfEGV-YcwHXiM1Jt382ei19JpVVIuVb2vnU";
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
 
 webpush.setVapidDetails(
   "mailto:vijay.chat.app@gmail.com",
@@ -14,7 +14,7 @@ webpush.setVapidDetails(
 serve(async (req) => {
   try {
     const { message_id, room_id, sender_id, content } = await req.json();
-    
+
     // We use the service_role key to bypass RLS for lookups
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') || "",
@@ -52,20 +52,20 @@ serve(async (req) => {
           data: { roomId: room_id }
         })
       ).catch(err => {
-          console.error('Push error for one subscriber:', err);
-          // If the subscription is gone (410 Gone / 404), we should ideally remove it here
+        console.error('Push error for one subscriber:', err);
+        // If the subscription is gone (410 Gone / 404), we should ideally remove it here
       });
     });
 
     await Promise.all(sendPromises);
 
-    return new Response(JSON.stringify({ success: true }), { 
+    return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { "Content-Type": "application/json" }
     });
   } catch (err) {
     console.error('Edge Function Error:', err);
-    return new Response(JSON.stringify({ error: err.message }), { 
+    return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { "Content-Type": "application/json" }
     });
