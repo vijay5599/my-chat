@@ -2,8 +2,8 @@ import { serve } from "https://deno.land/std@0.131.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import webpush from "https://esm.sh/web-push@3.6.7";
 
-const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
+const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY") || "BPZhvCeHMKD2BRn25uDzzYVExpVBjdhnm39KMd2bv0cHQ7D5IXXXPm2aONz0dr6uGZ1pJ0ftRoA52YA8wkuKLGs";
+const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY") || "sjTHgVqPWfEGV-YcwHXiM1Jt382ei19JpVVIuVb2vnU";
 
 webpush.setVapidDetails(
   "mailto:vijay.chat.app@gmail.com",
