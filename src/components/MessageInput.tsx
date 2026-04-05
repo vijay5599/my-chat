@@ -157,7 +157,7 @@ export default function MessageInput({
       setIsViewOnce(false)
     }
     e.target.value = ''
-  } 
+  }
 
   useEffect(() => {
     if (replyingTo && inputRef.current) {
@@ -349,7 +349,14 @@ export default function MessageInput({
                   Replying to {replyingTo.profiles?.username}
                 </p>
                 <p className="text-xs text-neutral-500 truncate">
-                  {replyingTo.content || (replyingTo.audio_url ? "Voice message" : "Original message")}
+                  {replyingTo.content ? (
+                    (() => {
+                      const url = replyingTo.content;
+                      const isImage = url.startsWith('blob:') || url.match(/\.(jpe?g|png|webp|svg|gif)(\?.*)?$/i) || url.includes('supabase.co/storage/v1/object/public/');
+                      const isGif = url.includes('giphy.com') || url.includes('tenor.com');
+                      return isGif ? "🎬 GIF" : (isImage ? "📷 Photo" : url);
+                    })()
+                  ) : (replyingTo.audio_url ? "🎤 Voice message" : "Original message")}
                 </p>
               </div>
               <button
@@ -467,6 +474,14 @@ export default function MessageInput({
                   </button>
                   <button
                     type="button"
+                    onClick={() => { handleImageClick(); setShowMoreActions(false); }}
+                    className="w-10 h-10 flex items-center justify-center bg-neutral-50 dark:bg-neutral-800 text-neutral-500 rounded-xl"
+                    title="Send Image"
+                  >
+                    <ImageIcon size={18} />
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => {
                       setIsGifPickerOpen(!isGifPickerOpen);
                       setIsEmojiPickerOpen(false);
@@ -477,13 +492,17 @@ export default function MessageInput({
                       isGifPickerOpen ? "bg-indigo-500/10 text-indigo-400" : "bg-neutral-50 dark:bg-neutral-800 text-neutral-500"
                     )}
                   >
-                    <ImageIcon size={18} />
+                    <Sparkles size={18} />
                   </button>
                   {/* Celebration Trigger Tool */}
-                  <CelebrateButton
-                    isActive={showCelebrationMenu}
+                  <button
                     onClick={() => setShowCelebrationMenu(!showCelebrationMenu)}
-                  />
+                    className={clsx(
+                      "w-10 h-10 flex items-center justify-center rounded-xl",
+                      showCelebrationMenu ? "bg-indigo-500/10 text-indigo-400" : "bg-neutral-50 dark:bg-neutral-800 text-neutral-500"
+                    )}>
+                    <PartyPopper size={18} />
+                  </button>
                 </div>
 
                 {/* Desktop View Action Icons */}
@@ -546,10 +565,18 @@ export default function MessageInput({
                     <Clock size={18} />
                   </button>
 
-                  <CelebrateButton
-                    isActive={showCelebrationMenu}
+                  <button
                     onClick={() => setShowCelebrationMenu(!showCelebrationMenu)}
-                  />
+                    className={clsx(
+                      "w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300",
+                      showCelebrationMenu
+                        ? "bg-indigo-500/10 text-indigo-400"
+                        : "text-neutral-400 hover:text-indigo-600 hover:bg-neutral-100 dark:hover:bg-neutral-900"
+                    )}
+                    title="Celebration"
+                  >
+                    <PartyPopper size={18} />
+                  </button>
                 </div>
               </div>
             </div>
@@ -599,103 +626,4 @@ export default function MessageInput({
     </div>
   )
 }
-
-function CelebrateButton({ isActive, onClick }: { isActive: boolean, onClick: () => void }) {
-  const [isHovered, setIsHovered] = useState(false)
-
-  return (
-    <div className="relative">
-      <AnimatePresence>
-        {isHovered && (
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 pointer-events-none">
-            <FloatingEmojis />
-          </div>
-        )}
-      </AnimatePresence>
-      
-      <motion.button
-        type="button"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        onClick={onClick}
-        whileTap={{ scale: 0.85 }}
-        animate={isActive ? {
-          boxShadow: [
-            "0 0 0px 0px rgba(99, 102, 241, 0)",
-            "0 0 20px 4px rgba(99, 102, 241, 0.4)",
-            "0 0 0px 0px rgba(99, 102, 241, 0)"
-          ]
-        } : {}}
-        transition={isActive ? {
-          boxShadow: {
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut"
-          },
-          type: "spring",
-          stiffness: 400,
-          damping: 15
-        } : { 
-          type: "spring", 
-          stiffness: 400, 
-          damping: 15 
-        }}
-        className={clsx(
-          "w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl sm:rounded-full transition-colors duration-300 border",
-          isActive
-            ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20 shadow-sm"
-            : "text-neutral-400 border-transparent hover:text-indigo-600 hover:bg-neutral-100 dark:hover:bg-neutral-900"
-        )}
-        title="Global Celebrate"
-      >
-        <motion.div
-          animate={isActive ? {
-            y: [0, -6, 0],
-            rotate: [0, -5, 5, 0]
-          } : {}}
-          transition={{
-            duration: 1.5,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        >
-          <PartyPopper size={18} />
-        </motion.div>
-      </motion.button>
-    </div>
-  )
-}
-
-function FloatingEmojis() {
-  const emojis = ['🎉', '✨', '🎆']
-  
-  return (
-    <div className="relative h-20 w-10 flex justify-center items-end overflow-visible">
-      {emojis.map((emoji, i) => (
-        <motion.span
-          key={i}
-          initial={{ opacity: 0, y: 0, x: 0, scale: 0.5 }}
-          animate={{ 
-            opacity: [0, 1, 1, 0], 
-            y: -60 - (Math.random() * 20),
-            x: (Math.random() - 0.5) * 30,
-            scale: [0.5, 1.2, 1, 0.8],
-            rotate: (Math.random() - 0.5) * 45
-          }}
-          transition={{ 
-            duration: 1.5 + (Math.random() * 0.5),
-            delay: i * 0.1,
-            ease: "easeOut",
-            repeat: Infinity,
-            repeatDelay: Math.random()
-          }}
-          className="absolute text-sm select-none"
-        >
-          {emoji}
-        </motion.span>
-      ))}
-    </div>
-  )
-}
-
 

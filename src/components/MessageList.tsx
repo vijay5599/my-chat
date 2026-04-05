@@ -214,7 +214,14 @@ export default function MessageList({
                         <p className="font-bold opacity-80 mb-0.5">
                           {msg.replied_message.profiles?.username || 'User'}
                         </p>
-                        {msg.replied_message.content || (msg.replied_message.audio_url ? 'Voice Message' : 'Deleted Message')}
+                        {msg.replied_message.content ? (
+                          (() => {
+                            const url = msg.replied_message.content;
+                            const isImage = url.startsWith('blob:') || url.match(/\.(jpe?g|png|webp|svg|gif)(\?.*)?$/i) || url.includes('supabase.co/storage/v1/object/public/');
+                            const isGif = url.includes('giphy.com') || url.includes('tenor.com');
+                            return isGif ? "🎬 GIF" : (isImage ? "📷 Photo" : url);
+                          })()
+                        ) : (msg.replied_message.audio_url ? '🎤 Voice Message' : 'Deleted Message')}
                       </div>
                     )}
 
