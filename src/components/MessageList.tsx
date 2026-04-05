@@ -74,7 +74,9 @@ export default function MessageList({
     if (!content) return null
 
     const isMediaUrl = (url: string) => {
-      return url.match(/\.(gif|jpe?g|png|webp|svg)(\?.*)?$/i) ||
+      return url.startsWith('blob:') || 
+        url.match(/\.(gif|jpe?g|png|webp|svg)(\?.*)?$/i) ||
+        url.includes('supabase.co/storage/v1/object/public/') ||
         url.includes('giphy.com/media/') ||
         url.includes('media.giphy.com/') ||
         url.includes('tenor.com/view/') ||

@@ -356,16 +356,18 @@ export default function ChatBox({
 
   const [errorStatus, setErrorStatus] = useState<string | null>(null)
 
-  const handleSendMessage = async (content: string, audioBlob?: Blob, isViewOnce?: boolean) => {
-    if (!content.trim() && !audioBlob) return
+  const handleSendMessage = async (content: string, media?: Blob | File, isViewOnce?: boolean) => {
+    if (!content.trim() && !media) return
 
     const optimisticId = crypto.randomUUID()
+    const isImage = media instanceof File && media.type.startsWith('image/')
+    const isAudio = media instanceof Blob && !isImage
     const optimisticMessage: Message = {
       id: optimisticId,
       room_id: roomId,
       user_id: currentUserId,
-      content,
-      audio_url: audioBlob ? URL.createObjectURL(audioBlob) : undefined,
+      content: isImage ? URL.createObjectURL(media as File) : content,
+      audio_url: isAudio ? URL.createObjectURL(media as Blob) : undefined,
       is_view_once: isViewOnce,
       is_viewed: false,
       reply_to_id: replyingTo?.id || undefined,
@@ -382,16 +384,30 @@ export default function ChatBox({
     setMessages((prev) => [...prev, optimisticMessage])
     setReplyingTo(null)
 
-    let audioUrl = null
-    if (audioBlob) {
-      const fileName = `${currentUserId}/${optimisticId}.webm`
+    let finalContent = content
+    let finalAudioUrl = null
+
+    if (media) {
+      // Use the confirmed existing bucket 'voice-messages' to avoid 404 errors
+      const bucket = 'voice-messages'
+      
+      // OPTIMIZE: Compress images on the fly before uploading
+      let mediaToUpload = media;
+      if (isImage && media instanceof File) {
+        mediaToUpload = await compressImage(media);
+      }
+      
+      // SANITIZE: Remove special characters from filename to avoid "InvalidKey" errors
+      const safeExtension = isImage ? '.jpg' : (isAudio ? '.webm' : '.bin');
+      const fileName = `${currentUserId}/${isAudio ? 'audio' : 'images'}/${optimisticId}${safeExtension}`
+      
       const { data: uploadData, error: uploadError } = await supabase
         .storage
-        .from('voice-messages')
-        .upload(fileName, audioBlob)
+        .from(bucket)
+        .upload(fileName, mediaToUpload)
 
       if (uploadError) {
-        setErrorStatus(`Failed to upload voice message: ${uploadError.message}`)
+        setErrorStatus(`Failed to upload media: ${uploadError.message}`)
         setTimeout(() => setErrorStatus(null), 5000)
         setMessages((prev) => prev.filter(msg => msg.id !== optimisticId))
         return
@@ -399,14 +415,20 @@ export default function ChatBox({
 
       const { data: { publicUrl } } = supabase
         .storage
-        .from('voice-messages')
+        .from(bucket)
         .getPublicUrl(fileName)
-      audioUrl = publicUrl
+      
+      if (isImage) {
+        finalContent = publicUrl
+      } else {
+        finalAudioUrl = publicUrl
+      }
     }
 
-    const finalMessage = {
+    const finalMessagePayload = {
       ...optimisticMessage,
-      audio_url: audioUrl || optimisticMessage.audio_url
+      content: finalContent,
+      audio_url: finalAudioUrl || optimisticMessage.audio_url
     }
 
     if (channelRef.current) {
@@ -416,7 +438,7 @@ export default function ChatBox({
       await channelRef.current.send({
         type: 'broadcast',
         event: 'new_message',
-        payload: finalMessage
+        payload: finalMessagePayload
       })
     }
 
@@ -427,8 +449,8 @@ export default function ChatBox({
           id: optimisticId,
           room_id: roomId,
           user_id: currentUserId,
-          content,
-          audio_url: audioUrl,
+          content: finalContent,
+          audio_url: finalAudioUrl,
           is_view_once: isViewOnce,
           is_viewed: false,
           reply_to_id: optimisticMessage.reply_to_id
@@ -528,6 +550,42 @@ export default function ChatBox({
       setErrorStatus(`Success: Message scheduled for ${new Date(scheduledFor).toLocaleString()}`)
       setTimeout(() => setErrorStatus(null), 5000)
     }
+  }
+
+  // UTILITY: High-Fidelity Client-side Image Compression
+  const compressImage = async (file: File): Promise<Blob | File> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(img.src);
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 1200;
+
+        if (width > height && width > maxDim) {
+          height *= maxDim / width;
+          width = maxDim;
+        } else if (height > maxDim) {
+          width *= maxDim / height;
+          height = maxDim;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", { type: 'image/jpeg' }));
+          } else {
+            resolve(file);
+          }
+        }, 'image/jpeg', 0.7); // 70% quality: perfect balance of size and fidelity
+      };
+    });
   }
 
   return (
