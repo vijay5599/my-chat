@@ -495,14 +495,10 @@ export default function MessageInput({
                     <Sparkles size={18} />
                   </button>
                   {/* Celebration Trigger Tool */}
-                  <button
+                  <CelebrateButton
+                    isActive={showCelebrationMenu}
                     onClick={() => setShowCelebrationMenu(!showCelebrationMenu)}
-                    className={clsx(
-                      "w-10 h-10 flex items-center justify-center rounded-xl",
-                      showCelebrationMenu ? "bg-indigo-500/10 text-indigo-400" : "bg-neutral-50 dark:bg-neutral-800 text-neutral-500"
-                    )}>
-                    <PartyPopper size={18} />
-                  </button>
+                  />
                 </div>
 
                 {/* Desktop View Action Icons */}
@@ -565,18 +561,10 @@ export default function MessageInput({
                     <Clock size={18} />
                   </button>
 
-                  <button
+                  <CelebrateButton
+                    isActive={showCelebrationMenu}
                     onClick={() => setShowCelebrationMenu(!showCelebrationMenu)}
-                    className={clsx(
-                      "w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300",
-                      showCelebrationMenu
-                        ? "bg-indigo-500/10 text-indigo-400"
-                        : "text-neutral-400 hover:text-indigo-600 hover:bg-neutral-100 dark:hover:bg-neutral-900"
-                    )}
-                    title="Celebration"
-                  >
-                    <PartyPopper size={18} />
-                  </button>
+                  />
                 </div>
               </div>
             </div>
@@ -623,6 +611,55 @@ export default function MessageInput({
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+function CelebrateButton({ isActive, onClick }: { isActive: boolean, onClick: () => void }) {
+  const [isHovered, setIsHovered] = useState(false)
+
+  return (
+    <div className="relative">
+      {/* <AnimatePresence>
+        {isHovered && (
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 pointer-events-none">
+            <FloatingEmojis />
+          </div>
+        )}
+      </AnimatePresence> */}
+
+      <motion.button
+        type="button"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onClick={onClick}
+        whileTap={{ scale: 0.85 }}
+        transition={isActive ? {
+          boxShadow: {
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          },
+          type: "spring",
+          stiffness: 400,
+          damping: 15
+        } : {
+          type: "spring",
+          stiffness: 400,
+          damping: 15
+        }}
+        className={clsx(
+          "w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl sm:rounded-full transition-colors duration-300 border",
+          isActive
+            ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20 shadow-sm"
+            : "text-neutral-400 border-transparent hover:text-indigo-600 hover:bg-neutral-100 dark:hover:bg-neutral-900"
+        )}
+        title="Global Celebrate"
+      >
+        <motion.div>
+          <PartyPopper size={18} />
+        </motion.div>
+      </motion.button>
     </div>
   )
 }
