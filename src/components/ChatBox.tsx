@@ -672,6 +672,7 @@ export default function ChatBox({
         }}
       >
         <MessageList
+          key={roomId}
           messages={messages}
           currentUserId={currentUserId}
           onDeleteMessage={handleDeleteMessage}

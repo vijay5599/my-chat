@@ -41,10 +41,34 @@ export default function MessageList({
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null) // messageId
   const [showFullPicker, setShowFullPicker] = useState<string | null>(null) // messageId
+  const isInitialRender = useRef(true)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (messages.length > 0) {
+      bottomRef.current?.scrollIntoView({ 
+        behavior: isInitialRender.current ? 'auto' : 'smooth' 
+      })
+    }
   }, [messages])
+
+  // Stability Fix: Handle dynamic height changes (images/avatars loading)
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    const resizeObserver = new ResizeObserver(() => {
+      if (isInitialRender.current) {
+        bottomRef.current?.scrollIntoView({ behavior: 'auto' })
+        // Once we've handled the dynamic height after initial messages, mark it done
+        if (messages.length > 0) {
+          isInitialRender.current = false
+        }
+      }
+    });
+
+    resizeObserver.observe(containerRef.current);
+    return () => resizeObserver.disconnect();
+  }, [messages.length]);
 
   // Handle click outside to close emoji picker
   useEffect(() => {
@@ -163,7 +187,10 @@ export default function MessageList({
   }
 
   return (
-    <div className="flex-1 min-w-[300px] overflow-y-auto px-2 py-3 space-y-1.5 relative text-neutral-800 dark:text-neutral-200">
+    <div 
+      ref={containerRef}
+      className="flex-1 min-w-[300px] overflow-y-auto px-2 py-3 space-y-1.5 relative text-neutral-800 dark:text-neutral-200"
+    >
       {messages.length === 0 ? (
         <div className="text-center text-neutral-500 mt-10">
           No messages yet. Be the first to say hi!
