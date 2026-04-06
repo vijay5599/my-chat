@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useState, useRef } from 'react'
 import { createRoom, deleteRoom } from '@/app/chat/actions'
 import { Room, Profile } from '@/types'
-import { PlusCircle, Search, LogOut, Settings, Trash2, Lock, Clock } from 'lucide-react'
+import { PlusCircle, Search, LogOut, Settings, Trash2, Lock, Clock, Gamepad2 } from 'lucide-react'
 import { logout } from '@/app/auth/actions'
 import { Avatar } from './Avatar'
 import { useNav } from './NavigationWrapper'
@@ -193,6 +193,29 @@ export default function Sidebar({
             </button>
           )}
         </div>
+      </div>
+      {/* NEW: QUICK ACCESS SECTION for Games */}
+      <div className="px-3 py-4 border-b border-slate-100 dark:border-slate-800/50">
+        <Link
+          href="/chat/games"
+          className={clsx(
+            "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group",
+            pathname === '/chat/games'
+              ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
+              : "text-slate-600 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-600"
+          )}
+        >
+          <div className={clsx(
+            "w-8 h-8 rounded-lg flex items-center justify-center transition-colors shadow-sm",
+            pathname === '/chat/games' ? "bg-white/20 text-white" : "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600"
+          )}>
+            <Gamepad2 size={18} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold truncate">Play & Fun</p>
+            <p className="text-[10px] opacity-70 truncate">Challenge your friends</p>
+          </div>
+        </Link>
       </div>
 
       <div className="px-4 py-3">
