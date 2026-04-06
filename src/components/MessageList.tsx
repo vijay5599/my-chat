@@ -378,8 +378,8 @@ export default function MessageList({
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.8, y: 10 }}
                             className={clsx(
-                              "absolute bottom-full mb-2 z-[110] bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-2 py-1.5 rounded-full shadow-xl border border-slate-200 dark:border-slate-800 flex items-center gap-1",
-                              isMe ? "right-0 origin-bottom-right" : "left-0 origin-bottom-left"
+                              "z-[110] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl px-2.5 py-2 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-slate-200 dark:border-slate-800 flex items-center gap-1",
+                              "absolute bottom-full mb-2 whitespace-nowrap left-1/2 -translate-x-1/2 origin-bottom"
                             )}
                           >
                             {['👍', '❤️', '😂', '😮', '😢'].map((emoji, i) => (
