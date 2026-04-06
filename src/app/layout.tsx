@@ -13,17 +13,41 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Realtime Premium Chat",
-  description: "A professional, real-time messaging application with high-fidelity UI and smooth animations.",
+  title: "Aura | Premium Real-time Chat",
+  description: "Experience the next level of messaging with high-fidelity UI, real-time gaming, and professional-grade security.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
-    title: "MyChat",
+    statusBarStyle: "black-translucent",
+    title: "Aura Chat",
+  },
+  openGraph: {
+    title: "Aura | Premium Real-time Chat",
+    description: "A professional messaging application with real-time multiplayer gaming and glassmorphic UI.",
+    url: "https://my-chat-eta-ten.vercel.app/",
+    siteName: "Aura",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 1200,
+        alt: "Aura Premium Chat Preview",
+      },
+    ],
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Aura | Premium Real-time Chat",
+    description: "Experience the next level of messaging with Aura.",
+    creator: "@aura_chat",
+    images: ["/og-image.png"],
   },
   formatDetection: {
     telephone: false,
   },
+  themeColor: "#0f172a",
 };
 
 import { ThemeProvider } from "@/components/ThemeProvider";

@@ -251,7 +251,7 @@ export default function MessageInput({
                     placeholder="e.g. MISSION ACCOMPLISHED! 🎉"
                     value={celebrationText}
                     onChange={(e) => setCelebrationText(e.target.value)}
-                    className="w-full bg-neutral-100 dark:bg-white/5 border-2 border-transparent focus:border-purple-500/30 rounded-2xl px-5 py-4 text-sm focus:ring-8 focus:ring-purple-500/5 focus:outline-none font-extrabold placeholder:text-neutral-400 dark:placeholder:text-neutral-600 transition-all shadow-inner"
+                    className="w-full bg-neutral-100 dark:bg-white/5 border-2 border-transparent focus:border-purple-500/30 rounded-2xl px-5 py-4 text-base focus:ring-8 focus:ring-purple-500/5 focus:outline-none font-extrabold placeholder:text-neutral-400 dark:placeholder:text-neutral-600 transition-all shadow-inner"
                   />
                 </div>
 
@@ -484,7 +484,7 @@ export default function MessageInput({
               onChange={handleChange}
               placeholder={isViewOnce ? "Type a secret message..." : "Type a message..."}
               className={clsx(
-                "flex-1 min-w-0 h-11 rounded-2xl px-4 border transition-all duration-300 text-sm focus:outline-none relative z-10",
+                "flex-1 min-w-0 h-11 rounded-2xl px-4 border transition-all duration-300 text-base focus:outline-none relative z-10",
                 !isViewOnce
                   ? "bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10"
                   : "bg-amber-50 dark:bg-amber-900/10 border-amber-500/30 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 placeholder:text-amber-600/30"

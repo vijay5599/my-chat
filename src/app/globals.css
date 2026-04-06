@@ -39,6 +39,7 @@
 html,
 body {
   min-height: 100%;
+  overscroll-behavior-y: none;
 }
 
 body {
@@ -49,6 +50,18 @@ body {
   line-height: 1.5;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Allow text selection only in messages and inputs */
+.message-content,
+input,
+textarea,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .dark body {
