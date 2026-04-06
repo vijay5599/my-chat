@@ -6,7 +6,7 @@ import { Message, Profile, MessageReaction } from '@/types'
 import { format } from 'date-fns'
 import clsx from 'clsx'
 import { Avatar } from './Avatar'
-import { Mic, Trash2, Eye, EyeOff, X, AlertTriangle, Reply, Smile } from 'lucide-react'
+import { Mic, Trash2, Eye, EyeOff, X, AlertTriangle, Reply, Smile, PlusCircle } from 'lucide-react'
 import EmojiPicker from './EmojiPicker'
 import { CelebrationMode } from '@/lib/hooks/usePresence'
 
@@ -40,6 +40,7 @@ export default function MessageList({
   const [viewingMessage, setViewingMessage] = useState<Message | null>(null)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null) // messageId
+  const [showFullPicker, setShowFullPicker] = useState<string | null>(null) // messageId
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -372,13 +373,56 @@ export default function MessageList({
 
                       <AnimatePresence>
                         {showEmojiPicker === msg.id && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.8, y: 10 }}
+                            className={clsx(
+                              "absolute bottom-full mb-2 z-[110] bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-2 py-1.5 rounded-full shadow-xl border border-slate-200 dark:border-slate-800 flex items-center gap-1",
+                              isMe ? "right-0 origin-bottom-right" : "left-0 origin-bottom-left"
+                            )}
+                          >
+                            {['👍', '❤️', '😂', '😮', '😢'].map((emoji, i) => (
+                              <motion.button
+                                key={emoji}
+                                initial={{ opacity: 0, scale: 0.5, y: 5 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                transition={{ delay: i * 0.04, type: "spring", damping: 15 }}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  onToggleReaction(msg.id, emoji)
+                                  setShowEmojiPicker(null)
+                                }}
+                                className="w-9 h-9 flex items-center justify-center text-xl hover:bg-neutral-100 dark:hover:bg-slate-800 rounded-full transition-all hover:scale-125 active:scale-95"
+                              >
+                                {emoji}
+                              </motion.button>
+                            ))}
+                            <motion.button
+                              initial={{ opacity: 0, scale: 0.5, y: 5 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              transition={{ delay: 5 * 0.04 }}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setShowFullPicker(msg.id)
+                                setShowEmojiPicker(null)
+                              }}
+                              className="w-8 h-8 ml-1 flex items-center justify-center text-slate-400 hover:text-blue-500 hover:bg-neutral-100 dark:hover:bg-slate-800 rounded-full transition-all border border-slate-200 dark:border-slate-800 shadow-sm"
+                            >
+                              <PlusCircle size={14} />
+                            </motion.button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+                      <AnimatePresence>
+                        {showFullPicker === msg.id && (
                           <EmojiPicker
-                            className={clsx("z-[110]", isMe ? "right-0" : "left-0")}
                             onSelect={(emoji) => {
                               onToggleReaction(msg.id, emoji)
-                              setShowEmojiPicker(null)
+                              setShowFullPicker(null)
                             }}
-                            onClose={() => setShowEmojiPicker(null)}
+                            onClose={() => setShowFullPicker(null)}
                           />
                         )}
                       </AnimatePresence>

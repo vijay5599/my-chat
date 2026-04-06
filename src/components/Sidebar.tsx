@@ -12,6 +12,7 @@ import { useNav } from './NavigationWrapper'
 import { X, PanelLeftClose } from 'lucide-react'
 import clsx from 'clsx'
 import { useEffect, useMemo } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import { ThemeToggle } from './ThemeToggle'
 
@@ -38,6 +39,7 @@ export default function Sidebar({
 
   // Realtime rooms state
   const [localRooms, setLocalRooms] = useState<Room[]>(rooms)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const supabase = useMemo(() => createClient(), [])
 
   // Sync with props if they change (from server)
@@ -70,6 +72,14 @@ export default function Sidebar({
       supabase.removeChannel(roomChannel)
     }
   }, [supabase, profile?.id])
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+    // Small delay to let the animation play before redirect
+    setTimeout(async () => {
+      await logout()
+    }, 800)
+  }
 
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -342,7 +352,7 @@ export default function Sidebar({
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <ThemeToggle />
-            <button onClick={() => logout()} className="text-slate-400 hover:text-red-500 p-1.5 transition-colors" title="Logout">
+            <button onClick={handleLogout} className="text-slate-400 hover:text-red-500 p-1.5 transition-colors" title="Logout">
               <LogOut size={16} />
             </button>
           </div>
@@ -356,6 +366,39 @@ export default function Sidebar({
           Account settings
         </Link>
       </div>
+
+      <AnimatePresence>
+        {isLoggingOut && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-900/60 backdrop-blur-xl"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300, delay: 0.1 }}
+              className="flex flex-col items-center gap-6 text-center px-6"
+            >
+              <div className="relative group">
+                <div className="w-20 h-20 rounded-3xl bg-white dark:bg-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex items-center justify-center">
+                  <LogOut className="text-blue-600" size={36} />
+                </div>
+                <motion.div 
+                  className="absolute -inset-4 rounded-[2.5rem] border-2 border-blue-500/40"
+                  animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.7, 0.3] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-2xl font-bold text-white tracking-tight">Bye for now!</h3>
+                <p className="text-blue-100/60 text-base max-w-[200px] leading-relaxed">Closing your secure session...</p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

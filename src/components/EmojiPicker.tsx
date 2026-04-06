@@ -6,12 +6,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 import clsx from 'clsx'
 
-export default function EmojiPicker({ 
-  onSelect, 
+export default function EmojiPicker({
+  onSelect,
   onClose,
   className
-}: { 
-  onSelect: (emoji: string) => void, 
+}: {
+  onSelect: (emoji: string) => void,
   onClose: () => void,
   className?: string
 }) {
@@ -31,27 +31,34 @@ export default function EmojiPicker({
   }, [onClose])
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.95, y: 10 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95, y: 10 }}
+    <motion.div
+      initial={{ opacity: 0, y: 100 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 100 }}
+      transition={{ type: "spring", damping: 25, stiffness: 300 }}
       ref={pickerRef}
       className={clsx(
-        "absolute bottom-full mb-4 z-[100] bg-[#0f1117] border border-white/5 p-2 rounded-[2rem] shadow-2xl overflow-hidden max-w-[92vw]",
-        className ? className : "left-0",
-        // Center on very small mobile screens
-        "sm:left-auto sm:right-auto"
+        "z-[200] bg-[#0f1117] border-t sm:border border-white/5 p-2 shadow-2xl overflow-hidden",
+        "fixed inset-x-0 bottom-0 rounded-t-[2.5rem] rounded-b-none mb-0",
+        "sm:absolute sm:bottom-full sm:inset-x-auto sm:mb-4 sm:rounded-[2rem] sm:w-[90vw] sm:max-w-[320px] sm:min-w-[280px]",
+        // Desktop alignment classes from parent
+        className ? `sm:${className} sm:left-auto sm:right-auto` : "sm:left-1/2 sm:-translate-x-1/2"
       )}
     >
+      {/* Mobile Drag Handle */}
+      <div className="flex justify-center pt-1.5 pb-2 sm:hidden">
+        <div className="w-12 h-1.5 bg-white/10 rounded-full" />
+      </div>
+
       <div className="flex items-center justify-between mb-2 px-3 pt-2">
         <h3 className="font-serif font-bold text-base text-white/80">Emojis</h3>
         <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full text-white/30 hover:text-white transition-all">
           <X size={16} />
         </button>
       </div>
-      
+
       <div className="rounded-2xl overflow-hidden max-w-full">
-        <Picker 
+        <Picker
           onEmojiClick={(emojiData) => {
             onSelect(emojiData.emoji)
           }}
