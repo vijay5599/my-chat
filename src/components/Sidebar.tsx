@@ -39,35 +39,86 @@ export default function Sidebar({
   // Realtime rooms state
   const [localRooms, setLocalRooms] = useState<Room[]>(rooms)
   const supabase = useMemo(() => createClient(), [])
+  // Unread counts state
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({})
 
   // Sync with props if they change (from server)
   useEffect(() => {
     setLocalRooms(rooms)
   }, [rooms])
 
-  // Subscribe to room changes (rename, delete, insert)
+  // Initial fetch of unread counts
   useEffect(() => {
-    const channel = supabase
-      .channel('sidebar-rooms')
+    if (!profile?.id) return
+    
+    const fetchUnread = async () => {
+      const { data } = await supabase
+        .from('unread_message_counts' as any)
+        .select('room_id, unread_count')
+        .eq('user_id', profile.id)
+
+      if (data) {
+        const counts: Record<string, number> = {}
+        data.forEach((item: any) => {
+          counts[item.room_id] = Number(item.unread_count)
+        })
+        setUnreadCounts(counts)
+      }
+    }
+
+    fetchUnread()
+  }, [profile?.id, supabase])
+
+  // Subscribe to room changes AND messages for unread counts
+  useEffect(() => {
+    if (!profile?.id) return
+
+    const roomChannel = supabase
+      .channel('sidebar-changes')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'rooms'
-      }, (payload) => {
+      }, (payload: any) => {
         if (payload.eventType === 'INSERT') {
           setLocalRooms(prev => [payload.new as Room, ...prev])
         } else if (payload.eventType === 'UPDATE') {
-          setLocalRooms(prev => prev.map(r => r.id === payload.new.id ? payload.new as Room : r))
+          setLocalRooms(prev => prev.map(r => (r as any).id === payload.new.id ? payload.new as Room : r))
         } else if (payload.eventType === 'DELETE') {
-          setLocalRooms(prev => prev.filter(r => r.id !== payload.old.id))
+          setLocalRooms(prev => prev.filter(r => (r as any).id !== payload.old.id))
+        }
+      })
+      // Listen for NEW MESSAGES to update unread counts
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages'
+      }, (payload: any) => {
+        const newMessage = payload.new
+        // Only increment if we're NOT currently in that room and it's not our own message
+        if (pathname !== `/chat/${newMessage.room_id}` && newMessage.user_id !== profile.id) {
+          setUnreadCounts(prev => ({
+            ...prev,
+            [newMessage.room_id]: (prev[newMessage.room_id] || 0) + 1
+          }))
         }
       })
       .subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      supabase.removeChannel(roomChannel)
     }
-  }, [supabase])
+  }, [supabase, profile?.id, pathname])
+
+  // Clear unread count when entering a room
+  useEffect(() => {
+    const roomId = pathname.split('/').pop()
+    if (roomId && unreadCounts[roomId] > 0) {
+      setUnreadCounts(prev => ({ ...prev, [roomId]: 0 }))
+      // Also update database so it persists
+      supabase.rpc('mark_room_as_read', { room_uuid: roomId, user_uuid: profile?.id })
+    }
+  }, [pathname, unreadCounts, profile?.id, supabase])
 
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -222,14 +273,24 @@ export default function Sidebar({
                         #
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate flex items-center gap-1.5">
-                          {!isJoined && (
-                            isPending
-                              ? <Clock size={12} className={isActive ? "text-white" : "text-amber-500"} />
-                              : <Lock size={12} className={isActive ? "text-white" : "text-slate-400"} />
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-semibold truncate flex items-center gap-1.5 min-w-0">
+                            {!isJoined && (
+                              isPending
+                                ? <Clock size={12} className={isActive ? "text-white" : "text-amber-500"} />
+                                : <Lock size={12} className={isActive ? "text-white" : "text-slate-400"} />
+                            )}
+                            {room.name}
+                          </p>
+                          {unreadCounts[room.id] > 0 && (
+                            <span className={clsx(
+                              "flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold shadow-sm shrink-0 animate-in zoom-in duration-300",
+                              isActive ? "bg-white text-blue-600" : "bg-red-500 text-white"
+                            )}>
+                              {unreadCounts[room.id] > 99 ? '99+' : unreadCounts[room.id]}
+                            </span>
                           )}
-                          {room.name}
-                        </p>
+                        </div>
                         <p className={clsx("text-[10px] truncate", isActive ? "text-blue-100" : "text-slate-400")}>
                           Public Channel
                         </p>
@@ -288,9 +349,19 @@ export default function Sidebar({
                         className={clsx("shrink-0", !isActive && "ring-1 ring-slate-200 dark:ring-slate-700")}
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate hover:text-blue-500 transition-colors">
-                          {dmInfo.name}
-                        </p>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-semibold truncate min-w-0">
+                            {dmInfo.name}
+                          </p>
+                          {unreadCounts[room.id] > 0 && (
+                            <span className={clsx(
+                              "flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold shadow-sm shrink-0 animate-in zoom-in duration-300",
+                              isActive ? "bg-white text-blue-600" : "bg-red-500 text-white"
+                            )}>
+                              {unreadCounts[room.id] > 99 ? '99+' : unreadCounts[room.id]}
+                            </span>
+                          )}
+                        </div>
                         <p className={clsx("text-[10px] truncate", isActive ? "text-blue-100" : "text-slate-400")}>
                           Direct Message
                         </p>

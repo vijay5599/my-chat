@@ -37,8 +37,10 @@ export default function EmojiPicker({
       exit={{ opacity: 0, scale: 0.95, y: 10 }}
       ref={pickerRef}
       className={clsx(
-        "absolute bottom-full mb-4 z-[100] bg-[#0f1117] border border-white/5 p-2 rounded-[2rem] shadow-2xl overflow-hidden",
-        className || "left-0"
+        "absolute bottom-full mb-4 z-[100] bg-[#0f1117] border border-white/5 p-2 rounded-[2rem] shadow-2xl overflow-hidden max-w-[92vw]",
+        className ? className : "left-0",
+        // Center on very small mobile screens
+        "sm:left-auto sm:right-auto"
       )}
     >
       <div className="flex items-center justify-between mb-2 px-3 pt-2">
@@ -48,7 +50,7 @@ export default function EmojiPicker({
         </button>
       </div>
       
-      <div className="rounded-2xl overflow-hidden">
+      <div className="rounded-2xl overflow-hidden max-w-full">
         <Picker 
           onEmojiClick={(emojiData) => {
             onSelect(emojiData.emoji)
@@ -56,8 +58,8 @@ export default function EmojiPicker({
           theme={Theme.DARK}
           emojiStyle={EmojiStyle.APPLE}
           autoFocusSearch={false}
-          width={320}
-          height={400}
+          width="100%"
+          height={380}
           lazyLoadEmojis={true}
           searchPlaceHolder="Search the void..."
           skinTonesDisabled={false}

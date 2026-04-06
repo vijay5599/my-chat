@@ -162,7 +162,7 @@ export default function MessageList({
   }
 
   return (
-    <div className="flex-1 min-w-[300px] overflow-y-auto p-1 space-y-4 relative text-neutral-800 dark:text-neutral-200">
+    <div className="flex-1 min-w-[300px] overflow-y-auto px-2 py-3 space-y-1.5 relative text-neutral-800 dark:text-neutral-200">
       {messages.length === 0 ? (
         <div className="text-center text-neutral-500 mt-10">
           No messages yet. Be the first to say hi!
@@ -176,7 +176,7 @@ export default function MessageList({
           return (
             <div
               key={msg.id}
-              className={clsx('flex w-full gap-3 group px-2 relative', isMe ? 'flex-row-reverse' : 'flex-row')}
+              className={clsx('flex w-full gap-2 group px-1 relative', isMe ? 'flex-row-reverse' : 'flex-row')}
             >
               <Avatar
                 url={msg.profiles?.avatar_url}
@@ -190,7 +190,7 @@ export default function MessageList({
                 <div className={clsx('flex items-center gap-2 flex-wrap', isMe ? 'flex-row-reverse' : 'flex-row')}>
                   <div
                     className={clsx(
-                      'rounded-2xl px-4 py-2 text-sm relative transition-all duration-200 shadow-sm break-words whitespace-pre-wrap overflow-hidden min-w-0 flex-shrink',
+                      'rounded-2xl px-3 py-1.5 text-sm relative transition-all duration-200 shadow-sm break-words whitespace-pre-wrap overflow-hidden min-w-0 flex-shrink',
                       isMe
                         ? (isViewOnce
                           ? (isViewed ? 'bg-neutral-100 dark:bg-neutral-900 text-neutral-400 border border-neutral-200 dark:border-neutral-800 rounded-tr-none' : 'bg-amber-600 text-white rounded-tr-none ring-2 ring-amber-400/30')
@@ -206,22 +206,24 @@ export default function MessageList({
                     {/* Replied Message Preview */}
                     {msg.replied_message && (
                       <div className={clsx(
-                        "mb-2 p-2 rounded-lg border-l-4 text-[11px] line-clamp-2 max-w-full truncate",
+                        "mb-2 p-2 rounded-lg border-l-4 text-[11px] w-full bg-opacity-30 border-opacity-50 overflow-hidden flex flex-col",
                         isMe
-                          ? "bg-blue-700/30 border-blue-400 text-blue-100"
-                          : "bg-neutral-200 dark:bg-neutral-700 border-neutral-400 text-neutral-500"
+                          ? "bg-blue-300/20 border-blue-200 text-blue-100"
+                          : "bg-neutral-400/20 border-neutral-400 text-neutral-500 dark:text-neutral-400"
                       )}>
-                        <p className="font-bold opacity-80 mb-0.5">
+                        <p className="font-bold opacity-80 mb-0.5 truncate w-full">
                           {msg.replied_message.profiles?.username || 'User'}
                         </p>
-                        {msg.replied_message.content ? (
-                          (() => {
-                            const url = msg.replied_message.content;
-                            const isImage = url.startsWith('blob:') || url.match(/\.(jpe?g|png|webp|svg|gif)(\?.*)?$/i) || url.includes('supabase.co/storage/v1/object/public/');
-                            const isGif = url.includes('giphy.com') || url.includes('tenor.com');
-                            return isGif ? "🎬 GIF" : (isImage ? "📷 Photo" : url);
-                          })()
-                        ) : (msg.replied_message.audio_url ? '🎤 Voice Message' : 'Deleted Message')}
+                        <p className="line-clamp-2 leading-relaxed break-words w-full">
+                          {msg.replied_message.content ? (
+                            (() => {
+                              const url = msg.replied_message.content;
+                              const isImage = url.startsWith('blob:') || url.match(/\.(jpe?g|png|webp|svg|gif)(\?.*)?$/i) || url.includes('supabase.co/storage/v1/object/public/');
+                              const isGif = url.includes('giphy.com') || url.includes('tenor.com');
+                              return isGif ? "🎬 GIF" : (isImage ? "📷 Photo" : url);
+                            })()
+                          ) : (msg.replied_message.audio_url ? '🎤 Voice Message' : 'Deleted Message')}
+                        </p>
                       </div>
                     )}
 
