@@ -34,6 +34,7 @@ export default function Sidebar({
   const { setIsSidebarOpen, isMobile } = useNav()
   const [isCreating, setIsCreating] = useState(false)
   const [roomName, setRoomName] = useState('')
+  const [isPrivate, setIsPrivate] = useState(false)
   const [search, setSearch] = useState('')
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
 
@@ -85,9 +86,12 @@ export default function Sidebar({
     e.preventDefault()
     if (!roomName.trim()) return
     const formData = new FormData()
+    console.log(formData, "formData")
     formData.append('name', roomName)
+    formData.append('is_private', isPrivate.toString())
     await createRoom(formData)
     setRoomName('')
+    setIsPrivate(false)
     setIsCreating(false)
   }
 
@@ -194,19 +198,38 @@ export default function Sidebar({
 
       <div className="flex-1 overflow-y-auto custom-scrollbar px-3 space-y-6 pb-4">
         {isCreating && (
-          <form onSubmit={handleCreateRoom} className="mb-4 p-2 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-200 dark:border-blue-900/30">
+          <form onSubmit={handleCreateRoom} className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-200 dark:border-blue-900/30">
             <input
               type="text"
               placeholder="Room Name"
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
-              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
               autoFocus
             />
+            <div className="flex items-center justify-between mb-4 px-1">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">Private Room</span>
+              <button
+                type="button"
+                onClick={() => setIsPrivate(!isPrivate)}
+                className={clsx(
+                  "w-10 h-5 rounded-full transition-colors relative",
+                  isPrivate ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-700"
+                )}
+              >
+                <div className={clsx(
+                  "absolute top-1 w-3 h-3 rounded-full bg-white transition-all",
+                  isPrivate ? "left-6" : "left-1"
+                )} />
+              </button>
+            </div>
             <div className="flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setIsCreating(false)}
+                onClick={() => {
+                  setIsCreating(false)
+                  setIsPrivate(false)
+                }}
                 className="text-[10px] font-bold text-neutral-500 hover:text-neutral-700 uppercase"
               >
                 Cancel
@@ -259,16 +282,20 @@ export default function Sidebar({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
                           <p className="text-sm font-semibold truncate flex items-center gap-1.5 min-w-0">
-                            {!isJoined && (
-                              isPending
-                                ? <Clock size={12} className={isActive ? "text-white" : "text-amber-500"} />
-                                : <Lock size={12} className={isActive ? "text-white" : "text-slate-400"} />
+                            {room.is_private ? (
+                              <Lock size={12} className={isActive ? "text-white" : "text-slate-400"} />
+                            ) : (
+                              !isJoined && (
+                                isPending
+                                  ? <Clock size={12} className={isActive ? "text-white" : "text-amber-500"} />
+                                  : <Lock size={12} className={isActive ? "text-white" : "text-slate-400"} />
+                              )
                             )}
                             {room.name}
                           </p>
                         </div>
                         <p className={clsx("text-[10px] truncate", isActive ? "text-blue-100" : "text-slate-400")}>
-                          Public Channel
+                          {room.is_private ? 'Private Group' : 'Public Channel'}
                         </p>
                       </div>
                     </Link>
@@ -385,7 +412,7 @@ export default function Sidebar({
                 <div className="w-20 h-20 rounded-3xl bg-white dark:bg-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex items-center justify-center">
                   <LogOut className="text-blue-600" size={36} />
                 </div>
-                <motion.div 
+                <motion.div
                   className="absolute -inset-4 rounded-[2.5rem] border-2 border-blue-500/40"
                   animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.7, 0.3] }}
                   transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}

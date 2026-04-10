@@ -18,6 +18,7 @@ export interface Room {
   wallpaper_url?: string
   wallpaper_color?: string
   type: 'group' | 'direct'
+  is_private?: boolean
 }
 
 export interface MessageReaction {

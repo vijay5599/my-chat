@@ -1,14 +1,15 @@
 'use client'
 
 import { useNav } from './NavigationWrapper'
-import { Menu, Clock, Users, Pencil, Check, X, Settings } from 'lucide-react'
+import { Menu, Clock, Users, Pencil, Check, X, Settings, MoreVertical, Shield, Calendar, Image as ImageIcon } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
-import { renameRoom, getOrCreateDirectChat } from '@/app/chat/actions'
+import { renameRoom, getOrCreateDirectChat, toggleRoomPrivacy } from '@/app/chat/actions'
 import { Room, Profile } from '@/types'
 import { Avatar } from './Avatar'
 import { ThemeToggle } from './ThemeToggle'
 import { WallpaperPicker } from './WallpaperPicker'
 import { useRouter } from 'next/navigation'
+import clsx from 'clsx'
 
 export default function ChatHeader({
   room,
@@ -36,9 +37,12 @@ export default function ChatHeader({
   const [isEditing, setIsEditing] = useState(false)
   const [newName, setNewName] = useState(room.name)
   const [isSaving, setIsSaving] = useState(false)
+  const [isPrivacyToggling, setIsPrivacyToggling] = useState(false)
+  const [showActions, setShowActions] = useState(false)
   const [isOnlineList, setIsOnlineList] = useState(false)
   const [showWallpaperPicker, setShowWallpaperPicker] = useState(false)
   const popupRef = useRef<HTMLDivElement>(null)
+  const actionsRef = useRef<HTMLDivElement>(null)
   const settingsRef = useRef<HTMLDivElement>(null)
   const settingsButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -47,7 +51,9 @@ export default function ChatHeader({
   const roomTitle = isDM ? (otherMember?.username || 'Direct Message') : room.name
 
   // Map online IDs to profiles
-  const onlineMembersList = members.filter(m => onlineUsers.includes(m.id))
+  // Map online IDs to profiles, excluding ourselves
+  const onlineMembersList = members.filter(m => onlineUsers.includes(m.id) && m.id !== currentUserId)
+  const othersOnlineCount = onlineMembersList.length
 
   // Handle click outside to close popups
   useEffect(() => {
@@ -63,6 +69,15 @@ export default function ChatHeader({
         setIsOnlineList(false)
       }
 
+      // Handle Actions List
+      if (
+        showActions &&
+        actionsRef.current &&
+        !actionsRef.current.contains(target)
+      ) {
+        setShowActions(false)
+      }
+
       // Handle Wallpaper Picker
       if (
         showWallpaperPicker &&
@@ -75,7 +90,7 @@ export default function ChatHeader({
       }
     }
 
-    if (isOnlineList || showWallpaperPicker) {
+    if (isOnlineList || showWallpaperPicker || showActions) {
       document.addEventListener('mousedown', handleClickOutside)
     }
 
@@ -113,6 +128,15 @@ export default function ChatHeader({
 
   const handleOnlineList = () => {
     setIsOnlineList(!isOnlineList)
+  }
+
+  const handleTogglePrivacy = async () => {
+    setIsPrivacyToggling(true)
+    const { error } = await toggleRoomPrivacy(room.id, !room.is_private)
+    if (error) {
+      alert(`Error updating privacy: ${error}`)
+    }
+    setIsPrivacyToggling(false)
   }
 
   return (
@@ -167,56 +191,32 @@ export default function ChatHeader({
                 )}
               </div>
             )}
-            <p className="hidden sm:flex text-[10px] text-neutral-500 font-medium tracking-wide items-center gap-1.5 uppercase opacity-70">
-              <span className="w-1 h-1 bg-neutral-300 dark:bg-neutral-600 rounded-full" />
+            <p className="hidden sm:flex text-[10px] text-neutral-500 font-medium tracking-wide items-center gap-1.5 uppercase opacity-70 whitespace-nowrap">
+              <span className="w-1 h-1 bg-neutral-300 dark:bg-neutral-600 rounded-full shrink-0" />
               Room ID: {room.id.split('-')[0]}...
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-4 shrink-0 pr-1">
-          {/* Collective Action Group */}
-          <div className="flex items-center gap-1 sm:gap-2">
-            {isOwner && onManageRequests && (
-              <button
-                onClick={onManageRequests}
-                className="p-2 sm:px-3 sm:py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg sm:text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all relative border border-transparent sm:border-blue-100 dark:sm:border-blue-900/30 flex items-center justify-center"
-                title="Manage join requests"
-              >
-                <Users size={16} className="sm:w-[14px] sm:h-[14px]" />
-                <span className="hidden sm:inline ml-1.5">Requests</span>
-                {pendingCount > 0 && (
-                  <span className="absolute -top-1 -right-1 sm:-top-1.5 sm:-right-1.5 bg-red-500 text-white text-[9px] sm:text-[10px] w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-black">
-                    {pendingCount}
-                  </span>
-                )}
-              </button>
-            )}
-
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 pr-1 ml-4">
+          {!isDM && (
             <button
-              onClick={onManageScheduled}
-              className="p-2 sm:px-3 sm:py-1.5 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-lg sm:text-xs font-semibold hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-all border border-transparent sm:border-purple-100 dark:sm:border-purple-900/30 flex items-center justify-center"
-              title="Scheduled Messages"
+              onClick={() => {
+                const url = `${window.location.origin}/join/${room.id}`
+                navigator.clipboard.writeText(url)
+                alert('Invite link copied to clipboard!')
+              }}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs font-bold transition-all shadow-sm shadow-green-500/20"
+              title="Copy Invitation Link"
             >
-              <Clock size={16} className="sm:w-[14px] sm:h-[14px]" />
-              <span className="hidden sm:inline ml-1.5">Scheduled</span>
+              <Check size={14} />
+              Invite
             </button>
-
-            <button
-              ref={settingsButtonRef}
-              onClick={() => setShowWallpaperPicker(!showWallpaperPicker)}
-              className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-all text-slate-500"
-              title="Customization"
-            >
-              <Settings size={18} />
-            </button>
-          </div>
-
-          <div className="hidden md:block h-6 w-[1px] bg-slate-200 dark:border-slate-800 mx-1" />
+          )}
 
           <button
             onClick={handleOnlineList}
-            className="flex items-center gap-1.5 pl-1 pr-0.5 sm:px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-all group"
+            className="flex items-center gap-1.5 px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-all group"
             title="View online members"
           >
             <div className="relative">
@@ -224,9 +224,106 @@ export default function ChatHeader({
               <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-75" />
             </div>
             <span className="text-xs font-bold text-neutral-600 dark:text-neutral-300 whitespace-nowrap">
-              {onlineCount}<span className="hidden sm:inline ml-1">online</span>
+              {onlineCount === 1 ? 'Just you' : `${onlineCount} online`}
             </span>
           </button>
+
+          <div className="relative">
+            <button
+              onClick={() => setShowActions(!showActions)}
+              className={clsx(
+                "p-2 rounded-lg transition-all",
+                showActions ? "bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-100" : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+              )}
+              title="Room Options"
+            >
+              <MoreVertical size={20} />
+            </button>
+
+            {showActions && (
+              <div
+                ref={actionsRef}
+                className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
+              >
+                <div className="p-2 space-y-1">
+                  <div className="px-2 py-1.5 mb-1">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Management</p>
+                  </div>
+
+                  {!isDM && (
+                    <button
+                      onClick={() => {
+                        const url = `${window.location.origin}/join/${room.id}`
+                        navigator.clipboard.writeText(url)
+                        alert('Invite link copied to clipboard!')
+                        setShowActions(false)
+                      }}
+                      className="sm:hidden w-full flex items-center gap-3 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium transition-colors"
+                    >
+                      <Check size={16} className="text-green-500" />
+                      Copy Invite Link
+                    </button>
+                  )}
+
+                  {isOwner && !isDM && (
+                    <>
+                      <button
+                        onClick={() => {
+                          onManageRequests?.()
+                          setShowActions(false)
+                        }}
+                        className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium transition-colors relative"
+                      >
+                        <Users size={16} className="text-blue-500" />
+                        Manage Requests
+                        {pendingCount > 0 && (
+                          <span className="ml-auto bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+                            {pendingCount}
+                          </span>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          handleTogglePrivacy()
+                          setShowActions(false)
+                        }}
+                        disabled={isPrivacyToggling}
+                        className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium transition-colors"
+                      >
+                        <Shield size={16} className={room.is_private ? "text-amber-500" : "text-green-500"} />
+                        {room.is_private ? 'Make Public' : 'Make Private'}
+                      </button>
+                    </>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      onManageScheduled?.()
+                      setShowActions(false)
+                    }}
+                    className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium transition-colors"
+                  >
+                    <Calendar size={16} className="text-purple-500" />
+                    Scheduled Messages
+                  </button>
+
+                  <div className="h-[1px] bg-slate-100 dark:bg-slate-800 mx-2 my-1" />
+
+                  <button
+                    onClick={() => {
+                      setShowWallpaperPicker(true)
+                      setShowActions(false)
+                    }}
+                    className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium transition-colors"
+                  >
+                    <ImageIcon size={16} className="text-indigo-500" />
+                    Theme & Wallpaper
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           {isOnlineList && (
             <div
@@ -241,16 +338,18 @@ export default function ChatHeader({
               </div>
 
               <div className="max-h-60 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
-                {onlineMembersList.length === 0 ? (
-                  <div className="py-8 text-center text-xs text-slate-400 italic">
-                    Others are offline
+                {othersOnlineCount === 0 ? (
+                  <div className="py-8 px-4 text-center">
+                    <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Users size={20} className="text-slate-400" />
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">No one else is online right now</p>
                   </div>
                 ) : (
                   <div className="space-y-1">
                     {onlineMembersList.map((member) => (
                       <button
                         key={member.id}
-                        disabled={member.id === (members.find(m => m.username === 'Me')?.id || '')} // Don't DM yourself if logic detects you
                         onClick={async () => {
                           const result = await getOrCreateDirectChat(member.id)
                           if (result.data) {
@@ -279,7 +378,7 @@ export default function ChatHeader({
               </div>
               <div className="p-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/20">
                 <p className="text-[9px] text-center text-slate-400 uppercase font-bold tracking-tighter">
-                  Total {onlineCount} {onlineCount === 1 ? 'member' : 'members'} online
+                  {othersOnlineCount === 0 ? 'You are the only member active' : `Total ${othersOnlineCount} others online`}
                 </p>
               </div>
             </div>

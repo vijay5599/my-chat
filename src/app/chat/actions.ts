@@ -7,6 +7,7 @@ import { Room, Profile } from '@/types'
 export async function createRoom(formData: FormData) {
   const supabase = await createClient()
   const name = formData.get('name') as string
+  const isPrivate = formData.get('is_private') === 'true'
 
   if (!name) return { error: 'Room name is required' }
 
@@ -18,7 +19,8 @@ export async function createRoom(formData: FormData) {
     .insert([{ 
       name, 
       owner_id: userData.user.id,
-      type: 'group'
+      type: 'group',
+      is_private: isPrivate
     }])
     .select()
     .single()
@@ -414,4 +416,33 @@ export async function getRoomsWithProfiles() {
   // Format the data to return a list of rooms
   const rooms = data.map(item => item.rooms).filter(Boolean) as unknown as (Room & { room_members: { profiles: Profile }[] })[]
   return { data: rooms }
+}
+
+export async function toggleRoomPrivacy(roomId: string, isPrivate: boolean) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) return { error: 'Not authenticated' }
+
+  // Check if owner
+  const { data: room } = await supabase
+    .from('rooms')
+    .select('owner_id')
+    .eq('id', roomId)
+    .single()
+
+  if (!room || room.owner_id !== user.id) {
+    return { error: 'Unauthorized: Only the owner can change privacy settings' }
+  }
+
+  const { error } = await supabase
+    .from('rooms')
+    .update({ is_private: isPrivate })
+    .eq('id', roomId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/chat')
+  revalidatePath(`/chat/${roomId}`)
+  return { success: true }
 }

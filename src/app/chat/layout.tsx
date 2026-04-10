@@ -26,11 +26,13 @@ export default async function ChatLayout({
 
   const joinedRoomIds = userMemberships?.map(m => m.room_id) || []
 
-  // Fetch all rooms that are either 'group' OR are in the user's joined list (which covers their DMs)
+  // Fetch all rooms that are:
+  // 1. 'group' AND NOT 'private'
+  // 2. OR any room where the user is a member (handles DMs and private rooms they're in)
   const { data: allRooms } = await supabase
     .from('rooms')
     .select('*, room_members(user_id, profiles(*))')
-    .or(`type.eq.group,id.in.(${joinedRoomIds.length > 0 ? joinedRoomIds.join(',') : '00000000-0000-0000-0000-000000000000'})`)
+    .or(`and(type.eq.group,is_private.eq.false),id.in.(${joinedRoomIds.length > 0 ? joinedRoomIds.join(',') : '00000000-0000-0000-0000-000000000000'})`)
     .order('created_at', { ascending: false })
 
   // Fetch current user's join requests

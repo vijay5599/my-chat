@@ -87,7 +87,7 @@ export default async function RoomPage({ params }: { params: Promise<{ roomId: s
                 <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-ping" />
                 <span className="text-sm font-semibold">Awaiting Review</span>
               </div>
-            ) : (
+            ) : room.is_private ? (
               <form action={async () => {
                 'use server'
                 await requestToJoinRoom(resolvedParams.roomId)
@@ -97,6 +97,23 @@ export default async function RoomPage({ params }: { params: Promise<{ roomId: s
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-2xl transition-all shadow-xl shadow-blue-500/30 active:scale-[0.98] hover:-translate-y-0.5"
                 >
                   Request to Join
+                </button>
+              </form>
+            ) : (
+              <form action={async () => {
+                'use server'
+                const supabase = await createClient()
+                const { data: { user } } = await supabase.auth.getUser()
+                if (user) {
+                  await supabase.from('room_members').insert([{ room_id: resolvedParams.roomId, user_id: user.id }])
+                  redirect(`/chat/${resolvedParams.roomId}`)
+                }
+              }}>
+                <button 
+                  type="submit"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-2xl transition-all shadow-xl shadow-green-500/30 active:scale-[0.98] hover:-translate-y-0.5"
+                >
+                  Join Room
                 </button>
               </form>
             )}
