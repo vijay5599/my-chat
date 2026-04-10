@@ -199,7 +199,7 @@ export default function ChatHeader({
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 pr-1 ml-4">
-          {!isDM && (
+          {!isDM && (!room.is_private || isOwner) && (
             <button
               onClick={() => {
                 const url = `${window.location.origin}/join/${room.id}`
@@ -250,7 +250,7 @@ export default function ChatHeader({
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Management</p>
                   </div>
 
-                  {!isDM && (
+                  {!isDM && (!room.is_private || isOwner) && (
                     <button
                       onClick={() => {
                         const url = `${window.location.origin}/join/${room.id}`

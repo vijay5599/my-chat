@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { X } from 'lucide-react'
 
 export default async function JoinRoomPage({
   params
@@ -14,44 +15,44 @@ export default async function JoinRoomPage({
     redirect(`/login?next=/join/${roomId}`)
   }
 
-  // 1. Check if room exists and get its info
-  const { data: room, error } = await supabase
-    .from('rooms')
-    .select('id, name, is_private')
-    .eq('id', roomId)
-    .single()
-
-  if (error || !room) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900">
-        <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl max-w-sm w-full text-center">
-          <h1 className="text-2xl font-bold text-red-500 mb-4">Room Not Found</h1>
-          <p className="text-slate-600 dark:text-slate-400 mb-6">This invite link may be invalid or the room has been deleted.</p>
-          <a href="/chat" className="inline-block bg-blue-600 text-white px-6 py-2 rounded-xl font-bold">Back to Chat</a>
-        </div>
-      </div>
-    )
-  }
-
-  // 2. Add user to room
-  // We use a direct insert to room_members here as the invite link acts as authorization
+  // 1. Attempt to add user to room immediately
+  // This bypasses the need for the user to be able to SELECT the room first
   const { error: joinError } = await supabase
     .from('room_members')
     .insert([{ room_id: roomId, user_id: user.id }])
 
-  // If already a member, that's fine too (23505 is unique violation)
-  if (joinError && joinError.code !== '23505') {
+  // If already a member (23505), redirect to chat
+  if (joinError && joinError.code === '23505') {
+    redirect(`/chat/${roomId}`)
+  }
+
+  // If the room doesn't exist or other error
+  if (joinError) {
+    // 23503 is foreign key violation (room_id doesn't exist)
+    const isInvalidRoom = joinError.code === '23503'
+    
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900">
-        <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl max-w-sm w-full text-center">
-          <h1 className="text-2xl font-bold text-red-500 mb-4">Error Joining Room</h1>
-          <p className="text-slate-600 dark:text-slate-400 mb-6">{joinError.message}</p>
-          <a href="/chat" className="inline-block bg-blue-600 text-white px-6 py-2 rounded-xl font-bold">Back to Chat</a>
+        <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl max-w-sm w-full text-center group">
+           <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+             <X size={32} />
+           </div>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">
+            {isInvalidRoom ? 'Invalid Link' : 'Join Error'}
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400 mb-6">
+            {isInvalidRoom 
+              ? 'This invite link is either invalid or the room no longer exists.' 
+              : `Something went wrong: ${joinError.message}`}
+          </p>
+          <a href="/chat" className="inline-block w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold transition-colors">
+            Back to Home
+          </a>
         </div>
       </div>
     )
   }
 
-  // 3. Redirect to the room
+  // 3. Successfully joined, redirect to the room
   redirect(`/chat/${roomId}`)
 }
