@@ -224,7 +224,7 @@ export default function ChatHeader({
               <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-75" />
             </div>
             <span className="text-xs font-bold text-neutral-600 dark:text-neutral-300 whitespace-nowrap">
-              {onlineCount === 1 ? 'Just you' : `${onlineCount} online`}
+              {onlineCount === 1 ? 'Just you' : `${onlineCount - 1} online`}
             </span>
           </button>
 
@@ -390,12 +390,12 @@ export default function ChatHeader({
       {showWallpaperPicker && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
           {/* Global Backdrop for all screens */}
-          <div 
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm" 
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setShowWallpaperPicker(false)}
           />
           <div ref={settingsRef} className="relative z-[201] w-full max-w-[340px] animate-in zoom-in-95 duration-300">
-            <WallpaperPicker 
+            <WallpaperPicker
               roomId={room.id}
               currentWallpaperColor={room.wallpaper_color}
               currentWallpaperUrl={room.wallpaper_url}
