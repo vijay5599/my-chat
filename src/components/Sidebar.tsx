@@ -198,15 +198,34 @@ export default function Sidebar({
 
       <div className="flex-1 overflow-y-auto custom-scrollbar px-3 space-y-6 pb-4">
         {isCreating && (
-          <form onSubmit={handleCreateRoom} className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-200 dark:border-blue-900/30">
-            <input
-              type="text"
-              placeholder="Room Name"
-              value={roomName}
-              onChange={(e) => setRoomName(e.target.value)}
-              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              autoFocus
-            />
+          <form 
+            action={async (formData) => {
+              const result = await createRoom(formData);
+              if (!result?.error) {
+                setIsCreating(false);
+                setRoomName(''); // Clear the input
+                setIsPrivate(false);
+              } else {
+                alert(result.error);
+              }
+            }} 
+            className="mt-6 space-y-5"
+          >
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 px-1">Room Name</label>
+              <input 
+                name="name"
+                type="text" 
+                placeholder="e.g. Gamers HQ"
+                required
+                value={roomName}
+                onChange={(e) => setRoomName(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-neutral-900 border-2 border-slate-100 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-white"
+              />
+            </div>
+            {/* Hidden Input to send privacy state to server action */}
+            <input type="hidden" name="is_private" value={isPrivate.toString()} />
+            
             <div className="flex items-center justify-between mb-4 px-1">
               <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">Private Room</span>
               <button
@@ -253,15 +272,16 @@ export default function Sidebar({
           ) : (
             <ul className="space-y-0.5">
               {channels.map(room => {
-                const isActive = pathname === `/chat/${room.id}`
+                const isActive = pathname === `/chat/${room.id}` || pathname === `/chat/${room.slug}`
                 const isJoined = joinedRoomIds.includes(room.id)
                 const isPending = joinRequests.some(req => req.room_id === room.id && req.status === 'pending')
                 const isOwner = room.owner_id === profile?.id
+                const roomLink = `/chat/${room.slug || room.id}`
 
                 return (
                   <li key={room.id} className="group/item relative">
                     <Link
-                      href={`/chat/${room.id}`}
+                      href={roomLink}
                       onClick={(e) => {
                         if (isActive) e.preventDefault()
                         if (isMobile) setIsSidebarOpen(false)

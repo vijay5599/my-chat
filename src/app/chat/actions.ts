@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import { Room, Profile } from '@/types'
 
 export async function createRoom(formData: FormData) {
@@ -14,13 +15,19 @@ export async function createRoom(formData: FormData) {
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) return { error: 'Not authenticated' }
 
+  // Generate a slug from name
+  const baseSlug = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+  const randomSuffix = Math.random().toString(36).substring(2, 6)
+  const slug = `${baseSlug}-${randomSuffix}`
+
   const { data, error } = await supabase
     .from('rooms')
     .insert([{ 
       name, 
       owner_id: userData.user.id,
       type: 'group',
-      is_private: isPrivate
+      is_private: isPrivate,
+      slug: slug
     }])
     .select()
     .single()
@@ -35,7 +42,7 @@ export async function createRoom(formData: FormData) {
   ])
 
   revalidatePath('/chat')
-  return { data }
+  redirect(`/chat/${data.slug}`)
 }
 
 export async function deleteRoom(roomId: string) {
@@ -396,7 +403,11 @@ export async function getRoomsWithProfiles() {
       rooms (
         id,
         name,
+        slug,
         type,
+        is_private,
+        wallpaper_url,
+        wallpaper_color,
         created_at,
         owner_id,
         room_members (

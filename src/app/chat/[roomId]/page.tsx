@@ -13,11 +13,33 @@ export default async function RoomPage({ params }: { params: Promise<{ roomId: s
     redirect('/login')
   }
 
+  // 1. Fetch room details - Smart lookup by ID or Slug
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resolvedParams.roomId)
+  
+  const query = supabase.from('rooms').select('*')
+  
+  if (isUuid) {
+    query.eq('id', resolvedParams.roomId)
+  } else {
+    query.eq('slug', resolvedParams.roomId)
+  }
+
+  const { data: room, error: roomError } = await query.single()
+
+  if (roomError || !room) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+        <h3 className="text-lg font-bold text-red-500">Room not found</h3>
+        <a href="/chat" className="mt-4 text-blue-500 hover:underline">Back to lobby</a>
+      </div>
+    )
+  }
+
   // Check if user is a member
   const { data: membership } = await supabase
     .from('room_members')
     .select('*')
-    .eq('room_id', resolvedParams.roomId)
+    .eq('room_id', room.id)
     .eq('user_id', user.id)
     .single()
 
@@ -27,26 +49,10 @@ export default async function RoomPage({ params }: { params: Promise<{ roomId: s
     const { data: request } = await supabase
       .from('room_join_requests')
       .select('*')
-      .eq('room_id', resolvedParams.roomId)
+      .eq('room_id', room.id)
       .eq('user_id', user.id)
       .single()
     pendingRequest = request
-  }
-
-  // Fetch room details
-  const { data: room, error: roomError } = await supabase
-    .from('rooms')
-    .select('*')
-    .eq('id', resolvedParams.roomId)
-    .single()
-    
-  if (roomError || !room) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-        <h3 className="text-lg font-bold text-red-500">Room not found</h3>
-        <a href="/chat" className="mt-4 text-blue-500 hover:underline">Back to lobby</a>
-      </div>
-    )
   }
 
   if (!membership) {
@@ -129,29 +135,25 @@ export default async function RoomPage({ params }: { params: Promise<{ roomId: s
     )
   }
 
-  // Fetch initial messages with profiles and replied message context
+  // Fetch initial messages with profiles, reactions, and replies using real UUID
   const { data: messages, error: messagesError } = await supabase
     .from('messages')
     .select('*, profiles(username, avatar_url, id), reactions:message_reactions(*, profiles(username, avatar_url, id)), replied_message:reply_to_id(*, profiles(username, avatar_url, id))')
-    .eq('room_id', resolvedParams.roomId)
+    .eq('room_id', room.id)
     .order('created_at', { ascending: true })
 
   if (messagesError) {
     console.error('Error fetching messages:', messagesError)
   }
 
-  // Fetch room members for mentions
-  const { data: members } = await getRoomMembers(resolvedParams.roomId)
-
-  if (!room) {
-    return <div className="p-8 text-center text-red-500">Room not found</div>
-  }
+  // Fetch room members for mentions using real UUID
+  const { data: members } = await getRoomMembers(room.id)
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.15),_rgba(148,163,184,0.06),_transparent_80%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(96,165,250,0.22),_rgba(15,23,42,0.90)_70%)] overflow-hidden relative">
       <ChatBox
         initialMessages={messages || []}
-        roomId={resolvedParams.roomId}
+        roomId={room.id}
         currentUserId={user.id}
         room={room}
         members={members || []}

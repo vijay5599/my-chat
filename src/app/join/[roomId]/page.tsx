@@ -15,11 +15,26 @@ export default async function JoinRoomPage({
     redirect(`/login?next=/join/${roomId}`)
   }
 
-  // 1. Attempt to add user to room immediately
-  // This bypasses the need for the user to be able to SELECT the room first
+  // Try to find the room by ID or Slug to get the real UUID
+  let joinRoomId = roomId
+  
+  // Check if roomId is NOT a UUID (then it must be a slug)
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(roomId)
+  
+  if (!isUuid) {
+    // We use an RPC call to bypass RLS for the lookup
+    const { data: rpcRoomId } = await supabase.rpc('get_room_id_by_slug', { 
+      input_slug: roomId 
+    })
+    
+    if (rpcRoomId) {
+      joinRoomId = rpcRoomId
+    }
+  }
+
   const { error: joinError } = await supabase
     .from('room_members')
-    .insert([{ room_id: roomId, user_id: user.id }])
+    .insert([{ room_id: joinRoomId, user_id: user.id }])
 
   // If already a member (23505), redirect to chat
   if (joinError && joinError.code === '23505') {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useNav } from './NavigationWrapper'
-import { Menu, Clock, Users, Pencil, Check, X, Settings, MoreVertical, Shield, Calendar, Image as ImageIcon } from 'lucide-react'
+import { Menu, Clock, Users, Pencil, Check, X, Settings, MoreVertical, Shield, Calendar, Image as ImageIcon, RotateCw } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { renameRoom, getOrCreateDirectChat, toggleRoomPrivacy } from '@/app/chat/actions'
 import { Room, Profile } from '@/types'
@@ -38,6 +38,7 @@ export default function ChatHeader({
   const [newName, setNewName] = useState(room.name)
   const [isSaving, setIsSaving] = useState(false)
   const [isPrivacyToggling, setIsPrivacyToggling] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [showActions, setShowActions] = useState(false)
   const [isOnlineList, setIsOnlineList] = useState(false)
   const [showWallpaperPicker, setShowWallpaperPicker] = useState(false)
@@ -202,7 +203,7 @@ export default function ChatHeader({
           {!isDM && (!room.is_private || isOwner) && (
             <button
               onClick={() => {
-                const url = `${window.location.origin}/join/${room.id}`
+                const url = `${window.location.origin}/join/${room.slug || room.id}`
                 navigator.clipboard.writeText(url)
                 alert('Invite link copied to clipboard!')
               }}
@@ -253,7 +254,7 @@ export default function ChatHeader({
                   {!isDM && (!room.is_private || isOwner) && (
                     <button
                       onClick={() => {
-                        const url = `${window.location.origin}/join/${room.id}`
+                        const url = `${window.location.origin}/join/${room.slug || room.id}`
                         navigator.clipboard.writeText(url)
                         alert('Invite link copied to clipboard!')
                         setShowActions(false)
@@ -320,6 +321,19 @@ export default function ChatHeader({
                     <ImageIcon size={16} className="text-indigo-500" />
                     Theme & Wallpaper
                   </button>
+
+                  {isMobile && (
+                    <button
+                      onClick={() => {
+                        setIsRefreshing(true)
+                        window.location.reload()
+                      }}
+                      className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/10 text-red-600 dark:text-red-400 text-sm font-bold transition-colors"
+                    >
+                      <RotateCw size={16} className={isRefreshing ? "animate-spin" : ""} />
+                      Refresh App
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -402,6 +416,17 @@ export default function ChatHeader({
               onClose={() => setShowWallpaperPicker(false)}
             />
           </div>
+        </div>
+      )}
+      {/* Full Screen Refresh Loader */}
+      {isRefreshing && (
+        <div className="fixed inset-0 z-[500] flex flex-col items-center justify-center bg-white/90 dark:bg-slate-950/90 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-blue-500/20 rounded-full" />
+            <div className="absolute inset-0 w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="mt-6 text-slate-800 dark:text-slate-100 font-bold text-lg tracking-tight">Synchronizing Chat</p>
+          <p className="mt-1 text-slate-500 dark:text-slate-400 text-sm">Please wait while we update your connection...</p>
         </div>
       )}
     </>
