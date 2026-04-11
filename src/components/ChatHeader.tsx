@@ -1,7 +1,7 @@
 'use client'
 
 import { useNav } from './NavigationWrapper'
-import { Menu, Clock, Users, Pencil, Check, X, Settings, MoreVertical, Shield, Calendar, Image as ImageIcon, RotateCw } from 'lucide-react'
+import { Menu, Clock, Users, Pencil, Check, X, Settings, MoreVertical, Shield, Calendar, Image as ImageIcon, RotateCw, BellRing } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { renameRoom, getOrCreateDirectChat, toggleRoomPrivacy } from '@/app/chat/actions'
 import { Room, Profile } from '@/types'
@@ -10,6 +10,7 @@ import { ThemeToggle } from './ThemeToggle'
 import { WallpaperPicker } from './WallpaperPicker'
 import { useRouter } from 'next/navigation'
 import clsx from 'clsx'
+import { useConfirm } from '@/lib/hooks/useConfirm'
 
 export default function ChatHeader({
   room,
@@ -20,6 +21,7 @@ export default function ChatHeader({
   currentUserId,
   onManageRequests,
   onManageScheduled,
+  onBuzz,
   pendingCount = 0
 }: {
   room: Room,
@@ -30,10 +32,12 @@ export default function ChatHeader({
   currentUserId: string,
   onManageRequests?: () => void,
   onManageScheduled?: () => void,
+  onBuzz?: () => void,
   pendingCount?: number
 }) {
   const router = useRouter()
   const { isSidebarOpen, setIsSidebarOpen, isMobile } = useNav()
+  const { alert } = useConfirm()
   const [isEditing, setIsEditing] = useState(false)
   const [newName, setNewName] = useState(room.name)
   const [isSaving, setIsSaving] = useState(false)
@@ -112,7 +116,11 @@ export default function ChatHeader({
     setIsSaving(true)
     const { error } = await renameRoom(room.id, newName.trim())
     if (error) {
-      alert(`Error renaming room: ${error}`)
+      alert({
+        title: 'Error',
+        message: `Error renaming room: ${error}`,
+        type: 'danger'
+      })
     } else {
       setIsEditing(false)
     }
@@ -135,7 +143,11 @@ export default function ChatHeader({
     setIsPrivacyToggling(true)
     const { error } = await toggleRoomPrivacy(room.id, !room.is_private)
     if (error) {
-      alert(`Error updating privacy: ${error}`)
+      alert({
+        title: 'Error',
+        message: `Error updating privacy: ${error}`,
+        type: 'danger'
+      })
     }
     setIsPrivacyToggling(false)
   }
@@ -205,13 +217,27 @@ export default function ChatHeader({
               onClick={() => {
                 const url = `${window.location.origin}/join/${room.slug || room.id}`
                 navigator.clipboard.writeText(url)
-                alert('Invite link copied to clipboard!')
+                alert({
+                  title: 'Success',
+                  message: 'Invite link copied to clipboard!',
+                  type: 'info'
+                })
               }}
               className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs font-bold transition-all shadow-sm shadow-green-500/20"
               title="Copy Invitation Link"
             >
               <Check size={14} />
               Invite
+            </button>
+          )}
+
+          {isDM && (
+            <button
+              onClick={onBuzz}
+              className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all active:scale-95 group"
+              title="Ping this person"
+            >
+              <BellRing size={20} className="group-hover:animate-[wiggle_0.3s_ease-in-out_infinite]" />
             </button>
           )}
 
@@ -256,7 +282,11 @@ export default function ChatHeader({
                       onClick={() => {
                         const url = `${window.location.origin}/join/${room.slug || room.id}`
                         navigator.clipboard.writeText(url)
-                        alert('Invite link copied to clipboard!')
+                        alert({
+                          title: 'Success',
+                          message: 'Invite link copied to clipboard!',
+                          type: 'info'
+                        })
                         setShowActions(false)
                       }}
                       className="sm:hidden w-full flex items-center gap-3 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium transition-colors"

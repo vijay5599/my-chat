@@ -45,7 +45,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false)
     setIsOpen(true)
     return new Promise((resolve) => {
-      resolver.current = (val) => resolve()
+      resolver.current = () => resolve()
     })
   }, [])
 

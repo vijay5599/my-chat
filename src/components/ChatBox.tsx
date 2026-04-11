@@ -12,10 +12,12 @@ import { TypingAnimation } from './TypingAnimation'
 import { useNav } from './NavigationWrapper'
 import ChatHeader from './ChatHeader'
 import { Room } from '@/types'
+import { BellRing } from 'lucide-react'
 import JoinRequestsManager from './JoinRequestsManager'
 import ScheduledMessagesManager from './ScheduledMessagesManager'
 import confetti from 'canvas-confetti'
 import { motion, AnimatePresence } from 'framer-motion'
+import clsx from 'clsx'
 
 export default function ChatBox({
   initialMessages,
@@ -44,6 +46,10 @@ export default function ChatBox({
   const [replyingTo, setReplyingTo] = useState<Message | null>(null)
   const [roomData, setRoomData] = useState<Room>(room)
   const [celebrationText, setCelebrationText] = useState<string | null>(null)
+  const [isBuzzing, setIsBuzzing] = useState(false)
+  const [lastBuzzTime, setLastBuzzTime] = useState(0)
+  const [incomingBuzz, setIncomingBuzz] = useState<string | null>(null)
+  const buzzAudioRef = useRef<HTMLAudioElement | null>(null)
 
   const triggerConfetti = (mode: CelebrationMode = 'rainbow', text?: string) => {
     if (text) {
@@ -227,6 +233,32 @@ export default function ChatBox({
     await celebrate(mode, text)
   }
 
+  const handleSilenceBuzz = () => {
+    if (buzzAudioRef.current) {
+      buzzAudioRef.current.pause()
+      buzzAudioRef.current = null
+    }
+    setIncomingBuzz(null)
+  }
+
+  const handleBuzz = async () => {
+    const now = Date.now()
+    if (now - lastBuzzTime < 10000) {
+      setErrorStatus("Slow down! You can only ping once every 10 seconds.")
+      setTimeout(() => setErrorStatus(null), 3000)
+      return
+    }
+
+    if (channelRef.current) {
+      setLastBuzzTime(now)
+      await channelRef.current.send({
+        type: 'broadcast',
+        event: 'buzz',
+        payload: { from: userProfile?.username || 'Someone' }
+      })
+    }
+  }
+
   // Fetch pending requests count if owner
   useEffect(() => {
     if (room.owner_id !== currentUserId) return
@@ -349,6 +381,35 @@ export default function ChatBox({
             }
           }
         }))
+      })
+      .on('broadcast', { event: 'buzz' }, (payload) => {
+        const { from } = payload.payload;
+        
+        // Stop any previous buzz audio
+        if (buzzAudioRef.current) {
+          buzzAudioRef.current.pause()
+          buzzAudioRef.current = null
+        }
+
+        // Play Long, Loud Chime (6s sequence)
+        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/1000/1000-preview.mp3')
+        audio.volume = 1.0
+        buzzAudioRef.current = audio
+        audio.play().catch(e => console.log('Audio play failed:', e))
+
+        // Trigger Screen Shake (slightly longer)
+        setIsBuzzing(true)
+        setIncomingBuzz(from)
+        
+        setTimeout(() => setIsBuzzing(false), 1500)
+        
+        // Auto-clear toast after sound ends (6s)
+        setTimeout(() => setIncomingBuzz(null), 6000)
+
+        // Haptic feedback
+        if ('vibrate' in navigator) {
+          navigator.vibrate([200, 100, 200, 100, 200])
+        }
       })
       .subscribe()
 
@@ -608,7 +669,10 @@ export default function ChatBox({
   }
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden relative">
+    <div className={clsx(
+      "flex-1 flex flex-col overflow-hidden relative transition-transform",
+      isBuzzing && "animate-[shake_0.5s_cubic-bezier(.36,.07,.19,.97)_both]"
+    )}>
       <AnimatePresence>
         {celebrationText && (
           <motion.div
@@ -636,6 +700,7 @@ export default function ChatBox({
         currentUserId={currentUserId}
         onManageRequests={() => setIsManagingRequests(true)}
         onManageScheduled={() => setIsManagingScheduled(true)}
+        onBuzz={handleBuzz}
         pendingCount={pendingCount}
       />
 
@@ -707,6 +772,35 @@ export default function ChatBox({
         replyingTo={replyingTo}
         onCancelReply={() => setReplyingTo(null)}
       />
+
+      <AnimatePresence>
+        {incomingBuzz && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 50 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 50 }}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100]"
+          >
+            <div className="bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-900 shadow-2xl rounded-2xl p-4 flex items-center gap-4 animate-bounce-subtle">
+              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white shrink-0">
+                <BellRing size={20} className="animate-[wiggle_0.3s_ease-in-out_infinite]" />
+              </div>
+              <div className="flex-1 min-w-0 pr-2">
+                <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">
+                  {incomingBuzz} is pinging you!
+                </p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Priority Alert</p>
+              </div>
+              <button
+                onClick={handleSilenceBuzz}
+                className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-xl text-xs font-black uppercase transition-colors shrink-0 border border-slate-200 dark:border-slate-700"
+              >
+                Silence
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
