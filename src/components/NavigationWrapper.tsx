@@ -54,8 +54,8 @@ export default function NavigationWrapper({
   const [incomingBuzz, setIncomingBuzz] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [buzzAudioUrl] = useState('https://www.soundjay.com/buttons/beep-01a.mp3') // Placeholder or use the chime URL
-  // We'll use the same Double Chime URL from before:
-  const CHIME_URL = 'https://p.nomics.com/wp-content/uploads/2018/10/notification_sound.mp3' 
+  // Urgent Classical Digital Telephone Ring
+  const CHIME_URL = 'https://assets.mixkit.co/active_storage/sfx/1350/1350-preview.mp3' 
 
   const buzz = (from: string) => {
     supabase.channel('global_buzz').send({
@@ -129,12 +129,26 @@ export default function NavigationWrapper({
         
         // Play Sound
         if (audioRef.current) {
+          audioRef.current.currentTime = 0
           audioRef.current.volume = 1.0
-          audioRef.current.play().catch(e => console.log('Audio autoplay blocked:', e))
+          audioRef.current.loop = true
+          const playPromise = audioRef.current.play()
+          if (playPromise !== undefined) {
+            playPromise.catch(e => {
+              console.log('Audio autoplay blocked by browser policy:', e)
+              // We can't force play, but the visual shake and haptics will still trigger
+            })
+          }
         }
 
         setTimeout(() => setIsBuzzing(false), 1500)
-        setTimeout(() => setIncomingBuzz(null), 8000)
+        setTimeout(() => {
+          setIncomingBuzz(null)
+          if (audioRef.current) {
+            audioRef.current.loop = false
+            audioRef.current.pause()
+          }
+        }, 8000)
 
         // Haptic feedback
         if ('vibrate' in navigator) {
@@ -158,7 +172,24 @@ export default function NavigationWrapper({
 
     handleResize()
     window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
+    
+    // Audio Context Priming: Unlocks sound for later use
+    const primeAudio = () => {
+      if (audioRef.current) {
+        audioRef.current.volume = 0
+        audioRef.current.play().then(() => {
+          audioRef.current?.pause()
+          audioRef.current!.volume = 1
+        }).catch(() => {})
+        window.removeEventListener('click', primeAudio)
+      }
+    }
+    window.addEventListener('click', primeAudio)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      window.removeEventListener('click', primeAudio)
+    }
   }, [])
 
   return (
