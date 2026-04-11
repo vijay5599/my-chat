@@ -41,7 +41,6 @@ export default function ChatHeader({
   currentUserId,
   onManageRequests,
   onManageScheduled,
-  onBuzz,
   pendingCount = 0
 }: {
   room: Room,
@@ -52,12 +51,12 @@ export default function ChatHeader({
   currentUserId: string,
   onManageRequests?: () => void,
   onManageScheduled?: () => void,
-  onBuzz?: () => void,
   pendingCount?: number
 }) {
   const router = useRouter()
-  const { isSidebarOpen, setIsSidebarOpen, isMobile } = useNav()
+  const { isSidebarOpen, setIsSidebarOpen, isMobile, buzz } = useNav()
   const { alert } = useConfirm()
+  const me = members.find(m => m.id === currentUserId)
   const [isEditing, setIsEditing] = useState(false)
   const [newName, setNewName] = useState(room.name)
   const [isSaving, setIsSaving] = useState(false)
@@ -273,7 +272,7 @@ export default function ChatHeader({
 
           {isDM && (
             <button
-              onClick={onBuzz}
+              onClick={() => buzz(me?.username || 'Someone')}
               className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all active:scale-95 group"
               title="Ping this person"
             >

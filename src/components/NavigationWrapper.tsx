@@ -1,17 +1,20 @@
 'use client'
 
-import { useState, useEffect, createContext, useContext, useMemo } from 'react'
+import { useState, useEffect, createContext, useContext, useMemo, useRef } from 'react'
 import clsx from 'clsx'
 import { createClient } from '@/lib/supabase/client'
 import { Room } from '@/types'
 import { usePathname } from 'next/navigation'
 import NotificationToast from './NotificationToast'
-import { Menu } from 'lucide-react'
+import { Menu, BellRing } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface NavContextType {
   isSidebarOpen: boolean
   setIsSidebarOpen: (open: boolean) => void
   isMobile: boolean
+  buzz: (from: string) => void
+  isBuzzing: boolean
 }
 
 const NavContext = createContext<NavContextType | undefined>(undefined)
@@ -45,6 +48,22 @@ export default function NavigationWrapper({
     roomName: string
     roomId: string
   } | null>(null)
+
+  // Buzz / Ping state
+  const [isBuzzing, setIsBuzzing] = useState(false)
+  const [incomingBuzz, setIncomingBuzz] = useState<string | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [buzzAudioUrl] = useState('https://www.soundjay.com/buttons/beep-01a.mp3') // Placeholder or use the chime URL
+  // We'll use the same Double Chime URL from before:
+  const CHIME_URL = 'https://p.nomics.com/wp-content/uploads/2018/10/notification_sound.mp3' 
+
+  const buzz = (from: string) => {
+    supabase.channel('global_buzz').send({
+      type: 'broadcast',
+      event: 'buzz',
+      payload: { from }
+    })
+  }
 
   useEffect(() => {
     if (!currentUserId) return
@@ -92,6 +111,43 @@ export default function NavigationWrapper({
     }
   }, [currentUserId, pathname, allRooms, supabase])
 
+  // Global Buzz Listener
+  useEffect(() => {
+    if (!currentUserId) return
+
+    const buzzChannel = supabase
+      .channel('global_buzz')
+      .on('broadcast', { event: 'buzz' }, ({ payload }) => {
+        const { from } = payload
+        
+        // Don't buzz yourself
+        // Wait, broadcast usually doesn't send back to self, but better safe
+        
+        // Trigger Screen Shake
+        setIsBuzzing(true)
+        setIncomingBuzz(from)
+        
+        // Play Sound
+        if (audioRef.current) {
+          audioRef.current.volume = 1.0
+          audioRef.current.play().catch(e => console.log('Audio autoplay blocked:', e))
+        }
+
+        setTimeout(() => setIsBuzzing(false), 1500)
+        setTimeout(() => setIncomingBuzz(null), 8000)
+
+        // Haptic feedback
+        if ('vibrate' in navigator) {
+          navigator.vibrate([200, 100, 200, 100, 200])
+        }
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(buzzChannel)
+    }
+  }, [currentUserId, supabase])
+
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 768
@@ -106,8 +162,12 @@ export default function NavigationWrapper({
   }, [])
 
   return (
-    <NavContext.Provider value={{ isSidebarOpen, setIsSidebarOpen, isMobile }}>
-      <div className="flex h-screen bg-neutral-50 dark:bg-neutral-900 text-foreground overflow-hidden relative">
+    <NavContext.Provider value={{ isSidebarOpen, setIsSidebarOpen, isMobile, buzz, isBuzzing }}>
+      <audio ref={audioRef} src={CHIME_URL} preload="auto" />
+      <div className={clsx(
+        "flex h-screen bg-neutral-50 dark:bg-neutral-900 text-foreground overflow-hidden relative transition-transform",
+        isBuzzing && "animate-[shake_0.5s_cubic-bezier(.36,.07,.19,.97)_both]"
+      )}>
         {/* Sidebar overlay for mobile */}
         {isMobile && isSidebarOpen && (
           <div 
@@ -159,6 +219,42 @@ export default function NavigationWrapper({
             onClose={() => setNotification(null)}
           />
         )}
+
+        {/* Global Buzz Toast with Silence button */}
+        <AnimatePresence>
+          {incomingBuzz && (
+            <motion.div
+              initial={{ opacity: 0, y: -50, scale: 0.8 }}
+              animate={{ opacity: 1, y: 100, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              className="fixed top-0 left-1/2 -translate-x-1/2 z-[300] w-full max-w-xs"
+            >
+              <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-2 border-amber-500 shadow-2xl rounded-3xl p-6 flex flex-col items-center gap-4 text-center">
+                <div className="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center animate-bounce shadow-lg shadow-amber-500/40">
+                  <BellRing size={32} className="text-white animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="font-black text-xl text-slate-900 dark:text-white uppercase tracking-tighter italic">BUZZ! BUZZ!</h3>
+                  <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+                    <span className="text-amber-600 dark:text-amber-400">@{incomingBuzz}</span> is pinging you!
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    if (audioRef.current) {
+                      audioRef.current.pause()
+                      audioRef.current.currentTime = 0
+                    }
+                    setIncomingBuzz(null)
+                  }}
+                  className="w-full py-3 bg-slate-900 dark:bg-white text-white dark:text-black font-black uppercase text-xs tracking-widest rounded-2xl hover:bg-neutral-800 transition-all border-b-4 border-amber-600 active:border-b-0 active:translate-y-1 shadow-xl"
+                >
+                  Silence Ping
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </NavContext.Provider>
   )
