@@ -483,6 +483,10 @@ export default function MessageInput({
               value={content}
               onChange={handleChange}
               placeholder={isViewOnce ? "Type a secret message..." : "Type a message..."}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="sentences"
+              spellCheck={false}
               className={clsx(
                 "flex-1 min-w-0 h-11 rounded-2xl px-4 border transition-all duration-300 text-base focus:outline-none relative z-10",
                 !isViewOnce
