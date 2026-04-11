@@ -41,12 +41,13 @@ export function Avatar({ url, name, size = 'md', isOnline = false, className }: 
   const bgColor = colors[colorIndex]
 
   return (
-    <div className={clsx(sizeClasses[size], "rounded-full overflow flex-shrink-0 relative flex items-center justify-center text-white font-medium", bgColor, className)}>
+    <div className={clsx(sizeClasses[size], "rounded-full overflow-hidden flex-shrink-0 relative flex items-center justify-center text-white font-medium", bgColor, className)}>
       {url ? (
         <Image
           src={url}
           alt={name || 'Avatar'}
           fill
+          unoptimized={true}
           className="object-cover rounded-full"
         />
       ) : (

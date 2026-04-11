@@ -1,7 +1,25 @@
 'use client'
 
 import { useNav } from './NavigationWrapper'
-import { Menu, Clock, Users, Pencil, Check, X, Settings, MoreVertical, Shield, Calendar, Image as ImageIcon, RotateCw, BellRing } from 'lucide-react'
+import {
+  Menu,
+  Clock,
+  Users,
+  Pencil,
+  Check,
+  X,
+  Settings,
+  MoreVertical,
+  Shield,
+  Calendar,
+  Image as ImageIcon,
+  RotateCw,
+  BellRing,
+  Info,
+  Sparkles,
+  Activity,
+  ShieldCheck
+} from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { renameRoom, getOrCreateDirectChat, toggleRoomPrivacy } from '@/app/chat/actions'
 import { Room, Profile } from '@/types'
@@ -11,6 +29,8 @@ import { WallpaperPicker } from './WallpaperPicker'
 import { useRouter } from 'next/navigation'
 import clsx from 'clsx'
 import { useConfirm } from '@/lib/hooks/useConfirm'
+import { getRoomIdentity } from '@/lib/room-identity'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function ChatHeader({
   room,
@@ -46,10 +66,14 @@ export default function ChatHeader({
   const [showActions, setShowActions] = useState(false)
   const [isOnlineList, setIsOnlineList] = useState(false)
   const [showWallpaperPicker, setShowWallpaperPicker] = useState(false)
+  const [showRoomProfile, setShowRoomProfile] = useState(false)
   const popupRef = useRef<HTMLDivElement>(null)
   const actionsRef = useRef<HTMLDivElement>(null)
   const settingsRef = useRef<HTMLDivElement>(null)
   const settingsButtonRef = useRef<HTMLButtonElement>(null)
+  const profileRef = useRef<HTMLDivElement>(null)
+
+  const identity = getRoomIdentity(room)
 
   const isDM = room.type === 'direct'
   const otherMember = members.find(m => m.id !== currentUserId)
@@ -93,14 +117,19 @@ export default function ChatHeader({
       ) {
         setShowWallpaperPicker(false)
       }
+
+      // Handle Room Profile
+      if (showRoomProfile && profileRef.current && !profileRef.current.contains(target)) {
+        setShowRoomProfile(false)
+      }
     }
 
-    if (isOnlineList || showWallpaperPicker || showActions) {
+    if (isOnlineList || showWallpaperPicker || showActions || showRoomProfile) {
       document.addEventListener('mousedown', handleClickOutside)
     }
 
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isOnlineList, showWallpaperPicker])
+  }, [isOnlineList, showWallpaperPicker, showActions, showRoomProfile])
 
   // Update local name if room prop changes (e.g., from realtime update)
   useEffect(() => {
@@ -188,12 +217,23 @@ export default function ChatHeader({
               </div>
             ) : (
               <div className="flex items-center gap-1.5 group/title">
-                {isDM && (
-                  <Avatar url={otherMember?.avatar_url} name={otherMember?.username} size="sm" className="shrink-0 mr-1" />
-                )}
-                <h2 className="font-bold text-base sm:text-lg text-slate-800 dark:text-slate-100 truncate tracking-tight">
-                  {roomTitle}
-                </h2>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowRoomProfile(!showRoomProfile)
+                  }}
+                  className="flex items-center gap-1.5 group/title hover:bg-slate-100 dark:hover:bg-slate-800/50 px-2 py-1 -ml-2 rounded-xl transition-all"
+                >
+                  {isDM ? (
+                    <Avatar url={otherMember?.avatar_url} name={otherMember?.username} size="sm" className="shrink-0 mr-1" />
+                  ) : (
+                    <Avatar url={identity.avatarUrl} name={room.name} size="sm" className="shrink-0 mr-1" />
+                  )}
+                  <h2 className="font-bold text-base sm:text-lg text-slate-800 dark:text-slate-100 truncate tracking-tight">
+                    {roomTitle}
+                  </h2>
+                  <Info size={14} className="text-slate-300 group-hover/title:text-blue-500 transition-colors" />
+                </button>
                 {isOwner && !isDM && (
                   <button
                     onClick={() => setIsEditing(true)}
@@ -204,10 +244,10 @@ export default function ChatHeader({
                 )}
               </div>
             )}
-            <p className="hidden sm:flex text-[10px] text-neutral-500 font-medium tracking-wide items-center gap-1.5 uppercase opacity-70 whitespace-nowrap">
+            {/* <p className="hidden sm:flex text-[10px] text-neutral-500 font-medium tracking-wide items-center gap-1.5 uppercase opacity-70 whitespace-nowrap">
               <span className="w-1 h-1 bg-neutral-300 dark:bg-neutral-600 rounded-full shrink-0" />
               Room ID: {room.id.split('-')[0]}...
-            </p>
+            </p> */}
           </div>
         </div>
 
@@ -428,6 +468,83 @@ export default function ChatHeader({
             </div>
           )}
         </div>
+
+        {/* GENERATIVE ROOM PROFILE CARD */}
+        <AnimatePresence>
+          {showRoomProfile && (
+            <motion.div
+              ref={profileRef}
+              initial={{ opacity: 0, y: -20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.95 }}
+              transition={{ type: "spring", damping: 25, stiffness: 400 }}
+              className="absolute top-[calc(100%+12px)] left-4 sm:left-6 w-[calc(100%-32px)] sm:w-96 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] shadow-[0_30px_70px_rgba(0,0,0,0.25)] z-[100] overflow-hidden"
+            >
+              {/* Generative Cover */}
+              <div className={`h-32 bg-gradient-to-br ${identity.gradient} relative`}>
+                <div className="absolute inset-0 bg-black/10 backdrop-blur-[2px]" />
+                <div className="absolute -bottom-10 left-8">
+                  <div className={`w-20 h-20 rounded-3xl bg-gradient-to-br ${identity.gradient} border-4 border-white dark:border-slate-900 flex items-center justify-center shadow-xl`}>
+                    <Sparkles className="text-white" size={32} />
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowRoomProfile(false)}
+                  className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-all"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="pt-12 p-8 space-y-6">
+                <div>
+                  <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none mb-3">
+                    {roomTitle}
+                  </h3>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm italic font-medium leading-relaxed">
+                    "{identity.motto}"
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                      <Activity size={10} /> Room Vibe
+                    </p>
+                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{identity.vibe}</p>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                      <Sparkles size={10} /> Activity
+                    </p>
+                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{identity.activity}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
+                    <Calendar size={14} className="shrink-0" />
+                    <p className="text-xs font-medium">Established in {identity.established}</p>
+                  </div>
+                  <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
+                    <ShieldCheck size={14} className="shrink-0" />
+                    <p className="text-xs font-medium">{identity.reliability}</p>
+                  </div>
+                  <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
+                    <Users size={14} className="shrink-0" />
+                    <p className="text-xs font-medium">{members.length} verified members</p>
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-[0.2em] text-center bg-blue-50 dark:bg-blue-900/20 py-2 rounded-xl border border-blue-100 dark:border-blue-900/30">
+                    Aura AI Generated Profile
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Global Wallpaper Picker Modal/Dropdown - Universal Screen Centering */}

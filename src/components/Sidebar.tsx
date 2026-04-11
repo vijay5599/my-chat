@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import { ThemeToggle } from './ThemeToggle'
 import { useConfirm } from '@/lib/hooks/useConfirm'
+import { getRoomIdentity } from '@/lib/room-identity'
 
 export default function Sidebar({
   rooms,
@@ -115,8 +116,8 @@ export default function Sidebar({
     const { error } = await deleteRoom(roomId)
 
     if (error) {
-       setLoading(false)
-       alert({
+      setLoading(false)
+      alert({
         title: 'Error',
         message: `Failed to delete room: ${error}`,
         type: 'danger'
@@ -214,7 +215,7 @@ export default function Sidebar({
 
       <div className="flex-1 overflow-y-auto custom-scrollbar px-3 space-y-6 pb-4">
         {isCreating && (
-          <form 
+          <form
             action={async (formData) => {
               const result = await createRoom(formData);
               if (!result?.error) {
@@ -228,14 +229,14 @@ export default function Sidebar({
                   type: 'danger'
                 })
               }
-            }} 
+            }}
             className="mt-6 space-y-5"
           >
             <div>
               <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 px-1">Room Name</label>
-              <input 
+              <input
                 name="name"
-                type="text" 
+                type="text"
                 placeholder="e.g. Gamers HQ"
                 required
                 value={roomName}
@@ -245,7 +246,7 @@ export default function Sidebar({
             </div>
             {/* Hidden Input to send privacy state to server action */}
             <input type="hidden" name="is_private" value={isPrivate.toString()} />
-            
+
             <div className="flex items-center justify-between mb-4 px-1">
               <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">Private Room</span>
               <button
@@ -297,6 +298,7 @@ export default function Sidebar({
                 const isPending = joinRequests.some(req => req.room_id === room.id && req.status === 'pending')
                 const isOwner = room.owner_id === profile?.id
                 const roomLink = `/chat/${room.slug || room.id}`
+                const identity = getRoomIdentity(room)
 
                 return (
                   <li key={room.id} className="group/item relative">
@@ -313,12 +315,12 @@ export default function Sidebar({
                           : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50"
                       )}
                     >
-                      <div className={clsx(
-                        "w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 transition-colors",
-                        isActive ? "bg-white/20 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 group-hover:text-blue-600"
-                      )}>
-                        #
-                      </div>
+                      <Avatar
+                        url={identity.avatarUrl}
+                        name={room.name}
+                        size="sm"
+                        className={clsx("shrink-0 transition-transform group-hover:scale-110", !isActive && "ring-1 ring-slate-200 dark:ring-slate-700")}
+                      />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
                           <p className="text-sm font-semibold truncate flex items-center gap-1.5 min-w-0">

@@ -8,6 +8,16 @@ const nextConfig: NextConfig = {
         hostname: 'puqyammoifaescdhnufl.supabase.co',
         pathname: '/storage/v1/object/public/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'source.boringavatars.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'api.dicebear.com',
+        pathname: '/**',
+      }
     ],
   },
 };
