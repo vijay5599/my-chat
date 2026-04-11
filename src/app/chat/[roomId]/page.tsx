@@ -96,7 +96,7 @@ export default async function RoomPage({ params }: { params: Promise<{ roomId: s
             ) : room.is_private ? (
               <form action={async () => {
                 'use server'
-                await requestToJoinRoom(resolvedParams.roomId)
+                await requestToJoinRoom(room.id)
               }}>
                 <button 
                   type="submit"
@@ -111,8 +111,10 @@ export default async function RoomPage({ params }: { params: Promise<{ roomId: s
                 const supabase = await createClient()
                 const { data: { user } } = await supabase.auth.getUser()
                 if (user) {
-                  await supabase.from('room_members').insert([{ room_id: resolvedParams.roomId, user_id: user.id }])
-                  redirect(`/chat/${resolvedParams.roomId}`)
+                  const { error } = await supabase.from('room_members').insert([{ room_id: room.id, user_id: user.id }])
+                  if (!error) {
+                    redirect(`/chat/${room.slug || room.id}`)
+                  }
                 }
               }}>
                 <button 
