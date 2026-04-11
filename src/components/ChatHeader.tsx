@@ -31,6 +31,7 @@ import clsx from 'clsx'
 import { useConfirm } from '@/lib/hooks/useConfirm'
 import { getRoomIdentity } from '@/lib/room-identity'
 import { motion, AnimatePresence } from 'framer-motion'
+import { createPortal } from 'react-dom'
 
 export default function ChatHeader({
   room,
@@ -71,6 +72,11 @@ export default function ChatHeader({
   const settingsRef = useRef<HTMLDivElement>(null)
   const settingsButtonRef = useRef<HTMLButtonElement>(null)
   const profileRef = useRef<HTMLDivElement>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const identity = getRoomIdentity(room)
 
@@ -389,16 +395,18 @@ export default function ChatHeader({
 
                   <div className="h-[1px] bg-slate-100 dark:bg-slate-800 mx-2 my-1" />
 
-                  <button
-                    onClick={() => {
-                      setShowWallpaperPicker(true)
-                      setShowActions(false)
-                    }}
-                    className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium transition-colors"
-                  >
-                    <ImageIcon size={16} className="text-indigo-500" />
-                    Theme & Wallpaper
-                  </button>
+                  {(isOwner || isDM) && (
+                    <button
+                      onClick={() => {
+                        setShowWallpaperPicker(true)
+                        setShowActions(false)
+                      }}
+                      className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium transition-colors"
+                    >
+                      <ImageIcon size={16} className="text-indigo-500" />
+                      Theme & Wallpaper
+                    </button>
+                  )}
 
                   {isMobile && (
                     <button
@@ -477,7 +485,10 @@ export default function ChatHeader({
           )}
         </div>
 
-        {/* GENERATIVE ROOM PROFILE CARD */}
+      </div>
+
+      {/* GENERATIVE ROOM PROFILE CARD - Portalled to top layer */}
+      {mounted && createPortal(
         <AnimatePresence>
           {showRoomProfile && (
             <motion.div
@@ -486,7 +497,7 @@ export default function ChatHeader({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -20, scale: 0.95 }}
               transition={{ type: "spring", damping: 25, stiffness: 400 }}
-              className="absolute top-[calc(100%+12px)] left-4 sm:left-6 w-[calc(100%-32px)] sm:w-96 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] shadow-[0_30px_70px_rgba(0,0,0,0.25)] z-[100] overflow-hidden"
+              className="fixed top-20 left-4 sm:left-[300px] w-[calc(100%-32px)] sm:w-96 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] shadow-[0_30px_70px_rgba(0,0,0,0.4)] z-[9990] overflow-hidden"
             >
               {/* Generative Cover */}
               <div className={`h-32 bg-gradient-to-br ${identity.gradient} relative`}>
@@ -552,18 +563,18 @@ export default function ChatHeader({
               </div>
             </motion.div>
           )}
-        </AnimatePresence>
-      </div>
+        </AnimatePresence>,
+        document.body
+      )}
 
-      {/* Global Wallpaper Picker Modal/Dropdown - Universal Screen Centering */}
-      {showWallpaperPicker && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-          {/* Global Backdrop for all screens */}
+      {/* Global Wallpaper Picker Modal - Portalled to top layer */}
+      {mounted && showWallpaperPicker && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
             onClick={() => setShowWallpaperPicker(false)}
           />
-          <div ref={settingsRef} className="relative z-[201] w-full max-w-[340px] animate-in zoom-in-95 duration-300">
+          <div ref={settingsRef} className="relative z-[10000] w-full max-w-[340px] animate-in zoom-in-95 duration-300">
             <WallpaperPicker
               roomId={room.id}
               currentWallpaperColor={room.wallpaper_color}
@@ -571,8 +582,10 @@ export default function ChatHeader({
               onClose={() => setShowWallpaperPicker(false)}
             />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
+
       {/* Full Screen Refresh Loader */}
       {isRefreshing && (
         <div className="fixed inset-0 z-[500] flex flex-col items-center justify-center bg-white/90 dark:bg-slate-950/90 backdrop-blur-md animate-in fade-in duration-300">

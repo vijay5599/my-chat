@@ -225,7 +225,17 @@ export async function toggleReaction(messageId: string, emoji: string) {
 
 export async function updateRoomWallpaper(roomId: string, wallpaperData: { url?: string, color?: string }) {
   const supabase = await createClient()
-  
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  // Verify ownership or DM membership
+  const { data: room } = await supabase.from('rooms').select('owner_id, type').eq('id', roomId).single()
+  if (!room) return { error: 'Room not found' }
+
+  if (room.owner_id !== user.id && room.type !== 'direct') {
+    return { error: 'Only the room owner can change the wallpaper' }
+  }
+
   const { error } = await supabase
     .from('rooms')
     .update({ 
@@ -238,6 +248,8 @@ export async function updateRoomWallpaper(roomId: string, wallpaperData: { url?:
     return { error: error.message }
   }
 
+  revalidatePath(`/chat/${roomId}`)
+  revalidatePath('/chat')
   return { success: true }
 }
 
