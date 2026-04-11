@@ -609,7 +609,7 @@ export default function ChatBox({
   }
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden relative transition-transform">
+    <div className="flex-1 flex flex-col h-full overflow-hidden relative transition-transform">
       <AnimatePresence>
         {celebrationText && (
           <motion.div

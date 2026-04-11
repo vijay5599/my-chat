@@ -207,7 +207,7 @@ export default function NavigationWrapper({
     <NavContext.Provider value={{ isSidebarOpen, setIsSidebarOpen, isMobile, buzz, isBuzzing }}>
       <audio ref={audioRef} src={CHIME_URL} preload="auto" />
       <div className={clsx(
-        "flex h-screen bg-neutral-50 dark:bg-neutral-900 text-foreground overflow-hidden relative transition-transform",
+        "flex h-[100dvh] bg-neutral-50 dark:bg-neutral-900 text-foreground overflow-hidden relative transition-transform",
         isBuzzing && "animate-[shake_0.5s_cubic-bezier(.36,.07,.19,.97)_both]"
       )}>
         {/* Sidebar overlay for mobile */}
