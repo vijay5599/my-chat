@@ -13,7 +13,7 @@ interface NavContextType {
   isSidebarOpen: boolean
   setIsSidebarOpen: (open: boolean) => void
   isMobile: boolean
-  buzz: (from: string) => void
+  buzz: (from: string) => { success: boolean, remaining?: number }
   isBuzzing: boolean
 }
 
@@ -52,17 +52,28 @@ export default function NavigationWrapper({
   // Buzz / Ping state
   const [isBuzzing, setIsBuzzing] = useState(false)
   const [incomingBuzz, setIncomingBuzz] = useState<string | null>(null)
+  const [lastBuzzTime, setLastBuzzTime] = useState(0)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [buzzAudioUrl] = useState('https://www.soundjay.com/buttons/beep-01a.mp3') // Placeholder or use the chime URL
   // Urgent Classical Digital Telephone Ring
   const CHIME_URL = 'https://assets.mixkit.co/active_storage/sfx/1350/1350-preview.mp3' 
 
   const buzz = (from: string) => {
+    const now = Date.now()
+    const COOLDOWN = 15000 // 15 seconds cooldown
+
+    if (now - lastBuzzTime < COOLDOWN) {
+      const remaining = Math.ceil((COOLDOWN - (now - lastBuzzTime)) / 1000)
+      return { success: false, remaining }
+    }
+
+    setLastBuzzTime(now)
     supabase.channel('global_buzz').send({
       type: 'broadcast',
       event: 'buzz',
       payload: { from }
     })
+    return { success: true }
   }
 
   useEffect(() => {

@@ -272,7 +272,16 @@ export default function ChatHeader({
 
           {isDM && (
             <button
-              onClick={() => buzz(me?.username || 'Someone')}
+              onClick={() => {
+                const result = buzz(me?.username || 'Someone')
+                if (!result.success) {
+                  alert({
+                    title: 'Slow down!',
+                    message: `You can only ping once every 15 seconds. Please wait ${result.remaining}s.`,
+                    type: 'info'
+                  })
+                }
+              }}
               className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all active:scale-95 group"
               title="Ping this person"
             >
