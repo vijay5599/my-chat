@@ -15,6 +15,7 @@ import { useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import { ThemeToggle } from './ThemeToggle'
+import { useConfirm } from '@/lib/hooks/useConfirm'
 
 export default function Sidebar({
   rooms,
@@ -42,6 +43,7 @@ export default function Sidebar({
   const [localRooms, setLocalRooms] = useState<Room[]>(rooms)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const supabase = useMemo(() => createClient(), [])
+  const { confirm, alert, setLoading, close } = useConfirm()
 
   // Sync with props if they change (from server)
   useEffect(() => {
@@ -99,20 +101,34 @@ export default function Sidebar({
     e.preventDefault()
     e.stopPropagation()
 
-    if (!confirm('Are you sure you want to delete this room? This will remove all messages.')) return
+    const confirmed = await confirm({
+      title: 'Delete Room',
+      message: 'Are you sure you want to delete this room? This will remove all messages forever.',
+      confirmText: 'Delete Room',
+      type: 'danger'
+    })
 
+    if (!confirmed) return
+
+    setLoading(true)
     setIsDeleting(roomId)
     const { error } = await deleteRoom(roomId)
 
     if (error) {
-      alert(`Failed to delete room: ${error}`)
+       setLoading(false)
+       alert({
+        title: 'Error',
+        message: `Failed to delete room: ${error}`,
+        type: 'danger'
+      })
     } else {
-      // If we are currently in the deleted room, redirect to lobby
-      if (pathname === `/chat/${roomId}`) {
+      // Small delay to show completion before closing/navigating
+      setTimeout(() => {
+        close()
         router.push('/chat')
-      }
+        setIsDeleting(null)
+      }, 500)
     }
-    setIsDeleting(null)
   }
 
   const filteredRooms = localRooms.filter(r => r.name.toLowerCase().includes(search.toLowerCase()))
@@ -206,7 +222,11 @@ export default function Sidebar({
                 setRoomName(''); // Clear the input
                 setIsPrivate(false);
               } else {
-                alert(result.error);
+                alert({
+                  title: 'Creation Failed',
+                  message: result.error,
+                  type: 'danger'
+                })
               }
             }} 
             className="mt-6 space-y-5"

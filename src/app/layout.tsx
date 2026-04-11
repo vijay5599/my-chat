@@ -59,6 +59,7 @@ export const viewport: Viewport = {
 
 import { ThemeProvider } from "@/components/ThemeProvider";
 import PWAHandler from "@/components/PWAHandler";
+import { ConfirmProvider } from "@/context/ConfirmContext";
 
 export default function RootLayout({
   children,
@@ -78,8 +79,10 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <PWAHandler />
-            {children}
+            <ConfirmProvider>
+              <PWAHandler />
+              {children}
+            </ConfirmProvider>
           </ThemeProvider>
       </body>
     </html>
