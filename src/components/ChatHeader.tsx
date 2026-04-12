@@ -21,7 +21,7 @@ import {
   ShieldCheck
 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
-import { renameRoom, getOrCreateDirectChat, toggleRoomPrivacy } from '@/app/chat/actions'
+import { renameRoom, getOrCreateDirectChat, toggleRoomPrivacy, generateRoomAiIdentity } from '@/app/chat/actions'
 import { Room, Profile } from '@/types'
 import { Avatar } from './Avatar'
 import { ThemeToggle } from './ThemeToggle'
@@ -73,6 +73,8 @@ export default function ChatHeader({
   const settingsButtonRef = useRef<HTMLButtonElement>(null)
   const profileRef = useRef<HTMLDivElement>(null)
   const [mounted, setMounted] = useState(false)
+  const [aiIdentity, setAiIdentity] = useState<{ motto: string, vibe: string } | null>(null)
+  const [isAiGenerating, setIsAiGenerating] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -184,6 +186,24 @@ export default function ChatHeader({
       })
     }
     setIsPrivacyToggling(false)
+  }
+  
+  const handleGenerateAiIdentity = async () => {
+    setIsAiGenerating(true)
+    const result = await generateRoomAiIdentity(room.id, room.name)
+    if (result.success && result.identity) {
+      setAiIdentity({
+        motto: result.identity.motto,
+        vibe: result.identity.vibe
+      })
+    } else {
+      alert({
+        title: 'AI Unavailable',
+        message: result.error || 'Aura is temporarily out of sync.',
+        type: 'warning'
+      })
+    }
+    setIsAiGenerating(false)
   }
 
   return (
@@ -521,7 +541,7 @@ export default function ChatHeader({
                     {roomTitle}
                   </h3>
                   <p className="text-slate-500 dark:text-slate-400 text-sm italic font-medium leading-relaxed">
-                    "{identity.motto}"
+                    "{aiIdentity?.motto || identity.motto}"
                   </p>
                 </div>
 
@@ -530,7 +550,7 @@ export default function ChatHeader({
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
                       <Activity size={10} /> Room Vibe
                     </p>
-                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{identity.vibe}</p>
+                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{aiIdentity?.vibe || identity.vibe}</p>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
@@ -555,10 +575,29 @@ export default function ChatHeader({
                   </div>
                 </div>
 
-                <div className="pt-4">
+                <div className="pt-4 space-y-3">
                   <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-[0.2em] text-center bg-blue-50 dark:bg-blue-900/20 py-2 rounded-xl border border-blue-100 dark:border-blue-900/30">
                     Aura AI Generated Profile
                   </div>
+                  
+                  {isOwner && !isDM && (
+                    <button
+                      onClick={handleGenerateAiIdentity}
+                      disabled={isAiGenerating}
+                      className={clsx(
+                        "w-full py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2",
+                        "bg-slate-900 dark:bg-white text-white dark:text-black hover:scale-[1.02] active:scale-95",
+                        isAiGenerating && "opacity-50 cursor-not-allowed"
+                      )}
+                    >
+                      {isAiGenerating ? (
+                        <RotateCw size={14} className="animate-spin" />
+                      ) : (
+                        <Sparkles size={14} className="text-blue-500" />
+                      )}
+                      {isAiGenerating ? "Synthesizing..." : "Refine with Aura AI"}
+                    </button>
+                  )}
                 </div>
               </div>
             </motion.div>

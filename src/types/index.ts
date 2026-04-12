@@ -17,7 +17,7 @@ export interface Room {
   created_at: string
   wallpaper_url?: string
   wallpaper_color?: string
-  type: 'group' | 'direct'
+  type: 'group' | 'direct' | 'public'
   is_private?: boolean
   slug?: string
 }

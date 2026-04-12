@@ -1,9 +1,12 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { Room, Profile } from '@/types'
+import { askGemini, AURA_BOT_ID } from '@/lib/gemini'
+import { askOpenAI } from '@/lib/openai'
+import { generateFreeImage } from '@/lib/art'
 
 export async function createRoom(formData: FormData) {
   const supabase = await createClient()
@@ -468,4 +471,162 @@ export async function toggleRoomPrivacy(roomId: string, isPrivate: boolean) {
   revalidatePath('/chat')
   revalidatePath(`/chat/${roomId}`)
   return { success: true }
+}
+
+export async function processAuraMention(roomId: string, userMessage: string) {
+  const supabase = await createAdminClient()
+  
+  // 1. Get room details to find a valid sender (Owner)
+  const { data: room } = await supabase
+    .from('rooms')
+    .select('owner_id')
+    .eq('id', roomId)
+    .single()
+
+  if (!room) return { error: 'Room not found' }
+
+  // 2. Clean Message
+  const prompt = userMessage.replace(/@aura/gi, '').trim()
+  
+  // 3. System Personality
+  const systemPrompt = `You are Aura, the soulful and intelligent AI guardian of this chat application. 
+  Your personality is calm, mystical, yet highly helpful. You speak with a touch of poetic elegance but remain concise.
+  You are part of the Aura chat ecosystem. Never mention you are a model from Google.
+  Goal: Help the user and maintain the "vibe" of the room.`
+
+  try {
+    let aiResponse = ''
+    
+    // Check if user wants an image (Improved detection)
+    const isImageRequest = /\b(generate|create|make|show|paint|draw)\b/i.test(prompt) && 
+                          !/\b(list|code|text|story|poem|song|recipe|how to)\b/i.test(prompt);
+    
+    if (isImageRequest) {
+      // Clean the prompt to remove "generate a [subject]" junk
+      const cleanPrompt = prompt
+        .replace(/\b(generate|create|make|show|paint|draw)\b\s+(a|an|the)?/i, '')
+        .trim()
+        .replace(/^["']|["']$/g, '');
+        
+      aiResponse = await generateFreeImage(cleanPrompt || prompt) // USE FREE ENGINE (HF)
+    } else {
+      // Switch to OpenAI for Chat to avoid Gemini 503 errors
+      aiResponse = await askOpenAI(prompt, systemPrompt)
+    }
+    
+    // 4. Save Bot Message 
+    // We use the AURA_BOT_ID. If it fails due to FK constraints, we use the room owner 
+    // but the UI will handle the '@aura' display by checking the content or a special flag if we had one.
+    // However, the best way is to try and find if an 'aura' profile exists.
+    
+    const { data: botProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('username', 'aura')
+      .single()
+
+    const senderId = botProfile?.id || AURA_BOT_ID
+
+    const { data: message, error } = await supabase
+      .from('messages')
+      .insert([{
+        room_id: roomId,
+        user_id: senderId,
+        content: aiResponse // RAW URL if it's an image
+      }])
+      .select('*, profiles(username, avatar_url, id)')
+      .single()
+
+    // If the fake AURA_BOT_ID failed, fallback to owner_id so the message at least saves
+    if (error && error.code === '23503') {
+       const { data: fallbackMsg, error: fallbackErr } = await supabase
+        .from('messages')
+        .insert([{
+          room_id: roomId,
+          user_id: room.owner_id, // Use owner as proxy
+          content: isImageRequest ? aiResponse : `✨ **Aura AI:** ${aiResponse}` // No prefix for images
+        }])
+        .select('*, profiles(username, avatar_url, id)')
+        .single()
+       
+       if (fallbackErr) throw fallbackErr
+       return { success: true, data: fallbackMsg }
+    }
+
+    if (error) throw error
+
+    return { success: true, data: message }
+  } catch (error) {
+    console.error('Aura AI Error:', error)
+    return { error: 'Aura is temporarily resting in the ether.' }
+  }
+}
+
+export async function generateRoomAiIdentity(roomId: string, roomName: string) {
+  // System Prompt for Room Identity
+  const systemPrompt = `You are the Aura Room Identity Designer. 
+  Based on the room name "${roomName}", generate a soulful identity.
+  Return a JSON object with:
+  - motto (short, maximum 10 words)
+  - vibe (one or two words, e.g. "Zen", "High-Octane")
+  - gradient (An array of 2-3 Hex color codes that make a beautiful gradient, e.g. ["#4f46e5", "#c026d3"])
+  Make it creative and unique.
+  Return ONLY the JSON.`
+
+  try {
+    const response = await askGemini(`Generate identity for room: ${roomName}`, systemPrompt, true)
+    
+    // Robust JSON extraction
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Invalid AI response');
+    
+    const identity = JSON.parse(jsonMatch[0])
+
+    const gradientStr = `linear-gradient(135deg, ${identity.gradient.join(', ')})`
+
+    // Update room wallpaper color with the new AI gradient
+    const supabase = await createAdminClient()
+    await supabase
+      .from('rooms')
+      .update({ 
+        wallpaper_color: gradientStr
+      })
+      .eq('id', roomId)
+
+    revalidatePath(`/chat/${roomId}`)
+    return { success: true, identity }
+  } catch (error) {
+    console.error('AI Identity Error:', error)
+    return { error: 'Could not generate identity at this time.' }
+  }
+}
+
+export async function askAuraAssistant(message: string) {
+  const systemPrompt = `You are Aura, the user's private AI assistant. 
+  You are helpful, insightful, and maintain a premium, soulful vibe.
+  This is a private, ephemeral chat. Your goal is to assist the user with any questions or tasks.
+  Keep responses concise and well-formatted.`
+
+  try {
+    // Check if user wants an image (Improved detection)
+    const isImageRequest = /\b(generate|create|make|show|paint|draw)\b/i.test(message) && 
+                          !/\b(list|code|text|story|poem|song|recipe|how to)\b/i.test(message);
+    
+    if (isImageRequest) {
+      const cleanPrompt = message
+        .replace(/\b(generate|create|make|show|paint|draw)\b\s+(a|an|the)?/i, '')
+        .trim()
+        .replace(/^["']|["']$/g, '');
+        
+      const imageUrl = await generateFreeImage(cleanPrompt || message) // USE FREE ENGINE (HF)
+      return { success: true, text: imageUrl }
+    }
+
+    // Switch to OpenAI for Chat to avoid Gemini 503 errors
+    const response = await askOpenAI(message, systemPrompt)
+    return { success: true, text: response }
+  } catch (error) {
+    console.error('Aura Assistant Error:', error)
+    return { error: 'Aura is momentarily disconnected.' }
+  }
 }

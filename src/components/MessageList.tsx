@@ -101,8 +101,11 @@ export default function MessageList({
 
     const isMediaUrl = (url: string) => {
       return url.startsWith('blob:') || 
+        url.startsWith('data:image/') || // Hugging Face / Base64
         url.match(/\.(gif|jpe?g|png|webp|svg)(\?.*)?$/i) ||
         url.includes('supabase.co/storage/v1/object/public/') ||
+        url.includes('oaidalleapiprodscus.blob.core.windows.net') || 
+        url.includes('image.pollinations.ai') ||
         url.includes('giphy.com/media/') ||
         url.includes('media.giphy.com/') ||
         url.includes('tenor.com/view/') ||
@@ -149,21 +152,32 @@ export default function MessageList({
 
     const emojiRegex = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g;
 
-    const formatText = (text: string) => {
-      const bits = text.split(emojiRegex);
-      return bits.map((bit, idx) =>
-        emojiRegex.test(bit)
-          ? <span key={idx} className="living-emoji">{bit}</span>
-          : bit
-      );
-    };
+    const formatRichText = (text: string) => {
+      // 1. Handle Mentions (@username)
+      const mentionRegex = /@(\w+)/g
+      
+      // 2. Simple Markdown regex components
+      let html = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        // Bold
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        // Italic
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        // List items
+        .replace(/^\d+\.\s+(.*?)$/gm, '<li class="ml-4 list-decimal">$1</li>')
+        .replace(/^[-*]\s+(.*?)$/gm, '<li class="ml-4 list-disc">$1</li>')
+        // Line breaks
+        .replace(/\n/g, '<br />');
 
-    const mentionRegex = /@(\w+)/g
-    const parts = content.split(mentionRegex)
-
-    return (
-      <div className="break-words leading-relaxed text-sm">
-        {parts.map((part, i) => {
+      // 3. Process emojis and mentions into React elements
+      // First, we split by emojis to wrap them in 'living-emoji' class
+      const emojiRegex = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g;
+      
+      const processSegment = (segment: string) => {
+        const parts = segment.split(mentionRegex);
+        return parts.map((part, i) => {
           if (i % 2 === 1) {
             const isMember = members.some(m => m.username === part)
             return (
@@ -171,17 +185,30 @@ export default function MessageList({
                 key={i}
                 className={clsx(
                   "font-bold px-1.5 py-0.5 rounded-md mx-0.5",
-                  isMember
-                    ? "text-indigo-400 bg-indigo-500/10"
-                    : "text-neutral-500"
+                  isMember ? "text-blue-400 bg-blue-500/10" : "text-neutral-500"
                 )}
               >
                 @{part}
               </span>
-            )
+            );
           }
-          return formatText(part)
-        })}
+          
+          // Split by emojis for living emoji support
+          const subParts = part.split(emojiRegex);
+          return subParts.map((subPart, subIdx) => 
+            emojiRegex.test(subPart) 
+              ? <span key={subIdx} className="living-emoji inline-block align-middle mx-0.5">{subPart}</span>
+              : <span key={subIdx} dangerouslySetInnerHTML={{ __html: subPart }} />
+          );
+        });
+      };
+
+      return <div className="markdown-body">{processSegment(html)}</div>;
+    };
+
+    return (
+      <div className="break-words leading-relaxed text-sm">
+        {formatRichText(content)}
       </div>
     )
   }

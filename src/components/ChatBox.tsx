@@ -6,7 +6,8 @@ import { Message, Profile, MessageReaction } from '@/types'
 import { RealtimeChannel } from '@supabase/supabase-js'
 import MessageList from './MessageList'
 import MessageInput from './MessageInput'
-import { toggleReaction, scheduleMessage } from '@/app/chat/actions'
+import { toggleReaction, scheduleMessage, processAuraMention, askAuraAssistant } from '@/app/chat/actions'
+import { AURA_BOT_ID } from '@/lib/gemini'
 import { usePresence, CelebrationMode } from '@/lib/hooks/usePresence'
 import { TypingAnimation } from './TypingAnimation'
 import { useNav } from './NavigationWrapper'
@@ -23,14 +24,17 @@ export default function ChatBox({
   roomId,
   currentUserId,
   room,
-  members
+  members,
+  isVirtual = false
 }: {
   initialMessages: Message[],
   roomId: string,
   currentUserId: string,
   room: Room,
-  members: Profile[]
+  members: Profile[],
+  isVirtual?: boolean
 }) {
+  const [isAiThinking, setIsAiThinking] = useState(false)
   const { setIsSidebarOpen, isMobile } = useNav()
   // Memoize the supabase client so its reference never changes to prevent endless WebSocket resets
   const supabase = useMemo(() => createClient(), [])
@@ -57,11 +61,11 @@ export default function ChatBox({
     if (mode === 'fireworks') {
       const duration = 5 * 1000
       const animationEnd = Date.now() + duration
-      
+
       const interval: any = setInterval(function () {
         const timeLeft = animationEnd - Date.now()
         if (timeLeft <= 0) return clearInterval(interval)
-        
+
         // Launch a "shell" upwards
         confetti({
           particleCount: randomInRange(30, 50),
@@ -133,7 +137,7 @@ export default function ChatBox({
       const end = Date.now() + duration
 
       // Create a heart shape from SVG path
-      const heart = confetti.shapeFromPath({ 
+      const heart = confetti.shapeFromPath({
         path: 'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'
       });
 
@@ -159,10 +163,10 @@ export default function ChatBox({
 
       const interval: any = setInterval(() => {
         if (Date.now() > end) return clearInterval(interval)
-        
+
         // Simulate a "strike" at a random X
         const strikeX = Math.random();
-        
+
         // Main strike bolt (very fast, sharp)
         confetti({
           particleCount: 50,
@@ -410,17 +414,17 @@ export default function ChatBox({
     if (media) {
       // Use the confirmed existing bucket 'voice-messages' to avoid 404 errors
       const bucket = 'voice-messages'
-      
+
       // OPTIMIZE: Compress images on the fly before uploading
       let mediaToUpload = media;
       if (isImage && media instanceof File) {
         mediaToUpload = await compressImage(media);
       }
-      
+
       // SANITIZE: Remove special characters from filename to avoid "InvalidKey" errors
       const safeExtension = isImage ? '.jpg' : (isAudio ? '.webm' : '.bin');
       const fileName = `${currentUserId}/${isAudio ? 'audio' : 'images'}/${optimisticId}${safeExtension}`
-      
+
       const { data: uploadData, error: uploadError } = await supabase
         .storage
         .from(bucket)
@@ -437,7 +441,7 @@ export default function ChatBox({
         .storage
         .from(bucket)
         .getPublicUrl(fileName)
-      
+
       if (isImage) {
         finalContent = publicUrl
       } else {
@@ -482,6 +486,73 @@ export default function ChatBox({
       setTimeout(() => setErrorStatus(null), 5000)
       setMessages((prev) => prev.filter(msg => msg.id !== optimisticId))
     }
+
+    // 2. TRIGGER AURA AI BOT (If mentioned)
+    if (content.toLowerCase().includes('@aura')) {
+      setIsAiThinking(true)
+      // Small delay for natural feel
+      setTimeout(async () => {
+        try {
+          const result = await processAuraMention(roomId, content)
+          if (result.error) {
+            setErrorStatus(result.error)
+            setTimeout(() => setErrorStatus(null), 5000)
+          }
+        } finally {
+          setIsAiThinking(false)
+        }
+      }, 1000)
+    }
+  }
+
+  const handleSendVirtualMessage = async (content: string) => {
+    if (!content.trim()) return
+
+    const userMsgId = crypto.randomUUID()
+    const userMsg: Message = {
+      id: userMsgId,
+      room_id: 'virtual',
+      user_id: currentUserId,
+      content,
+      created_at: new Date().toISOString(),
+      profiles: userProfile || undefined
+    }
+
+    setMessages(prev => [...prev, userMsg])
+    setIsAiThinking(true)
+
+    // Trigger AI response
+    setTimeout(async () => {
+      try {
+        const result = await askAuraAssistant(content)
+        if (result.success && result.text) {
+          const aiMsg: Message = {
+            id: crypto.randomUUID(),
+            room_id: 'virtual',
+            user_id: AURA_BOT_ID,
+            content: result.text,
+            created_at: new Date().toISOString(),
+            profiles: {
+              id: AURA_BOT_ID,
+              username: 'aura',
+              avatar_url: 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=256&h=256&auto=format&fit=crop',
+              updated_at: new Date().toISOString()
+            }
+          }
+          setMessages(prev => [...prev, aiMsg])
+
+          // Play "pop" sound
+          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3')
+          audio.volume = 0.5
+          audio.play().catch(e => console.log('Audio play failed:', e))
+        } else if (result.error) {
+          setErrorStatus(result.error)
+          setTimeout(() => setErrorStatus(null), 5000)
+        }
+      } finally {
+        setIsAiThinking(false)
+      }
+    }, 500)
   }
 
   const handleUpdateMessage = async (messageId: string, updates: Partial<Message>) => {
@@ -596,7 +667,7 @@ export default function ChatBox({
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0, width, height);
-        
+
         canvas.toBlob((blob) => {
           if (blob) {
             resolve(new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", { type: 'image/jpeg' }));
@@ -686,6 +757,13 @@ export default function ChatBox({
 
         <div className="px-6 py-2 min-h-[40px] flex items-center justify-between">
           <div className="flex-1">
+            {isAiThinking && (
+              <div className="absolute bottom-2 left-4 z-10 transition-all">
+                <TypingAnimation 
+                  names={['aura']} 
+                />
+              </div>
+            )}
             {presenceTypingUsers.length > 0 && (
               <TypingAnimation
                 names={presenceTypingUsers
@@ -699,7 +777,7 @@ export default function ChatBox({
       </div>
 
       <MessageInput
-        onSendMessage={handleSendMessage}
+        onSendMessage={isVirtual ? handleSendVirtualMessage : handleSendMessage}
         onScheduleMessage={handleScheduleMessage}
         onTyping={handleTyping}
         onCelebrate={handleCelebrate}

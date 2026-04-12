@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useState, useRef } from 'react'
 import { createRoom, deleteRoom } from '@/app/chat/actions'
 import { Room, Profile } from '@/types'
-import { PlusCircle, Search, LogOut, Settings, Trash2, Lock, Clock, Gamepad2 } from 'lucide-react'
+import { PlusCircle, Search, LogOut, Settings, Trash2, Lock, Clock, Gamepad2, Sparkles } from 'lucide-react'
 import { logout } from '@/app/auth/actions'
 import { Avatar } from './Avatar'
 import { useNav } from './NavigationWrapper'
@@ -196,6 +196,33 @@ export default function Sidebar({
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold truncate">Play & Fun</p>
             <p className="text-[10px] opacity-70 truncate">Challenge your friends</p>
+          </div>
+        </Link>
+        
+        <Link
+          href="/chat/aura"
+          className={clsx(
+            "mt-2 flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group relative overflow-hidden font-bold",
+            pathname === '/chat/aura'
+              ? "bg-slate-900 text-white shadow-xl shadow-blue-500/20"
+              : "text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+          )}
+        >
+          {/* Subtle glowing aura backplate */}
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-blue-500/10 animate-[pulse_3s_ease-in-out_infinite]" />
+          
+          <div className={clsx(
+            "w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm z-10",
+            pathname === '/chat/aura' ? "bg-blue-600 text-white scale-110" : "bg-white dark:bg-slate-700 text-blue-600 ring-1 ring-slate-200 dark:ring-slate-600"
+          )}>
+            <Sparkles size={18} className={pathname === '/chat/aura' ? "" : "animate-pulse"} />
+          </div>
+          <div className="flex-1 min-w-0 z-10">
+            <p className="text-sm font-black tracking-tight flex items-center gap-1.5">
+              Aura Assistant
+              <span className="text-[8px] bg-blue-500/20 text-blue-600 px-1.5 py-0.5 rounded-full uppercase">AI</span>
+            </p>
+            <p className="text-[10px] opacity-70 truncate italic">Private & Ephemeral</p>
           </div>
         </Link>
       </div>
