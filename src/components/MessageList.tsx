@@ -9,6 +9,8 @@ import { Avatar } from './Avatar'
 import { Mic, Trash2, Eye, EyeOff, X, AlertTriangle, Reply, Smile, PlusCircle, Pencil, Check } from 'lucide-react'
 import EmojiPicker from './EmojiPicker'
 import { CelebrationMode } from '@/lib/hooks/usePresence'
+import TicTacToeMultiplayer from './TicTacToeMultiplayer'
+import { GAME_PREFIX, TicTacToeState, handleMove as handleGameMove, createInitialGameState } from '@/lib/games'
 
 const isEmojiOnly = (str: string) => {
   // Simple check for single emoji (including multi-char ones like family)
@@ -247,6 +249,35 @@ export default function MessageList({
       )
     }
 
+    if (content.startsWith(GAME_PREFIX)) {
+      try {
+        const gameState = JSON.parse(content.replace(GAME_PREFIX, '')) as TicTacToeState
+        const myPlayer = gameState.players.X.id === currentUserId ? 'X' : (gameState.players.O.id === currentUserId ? 'O' : null)
+        const isMyTurn = (gameState.isXNext && myPlayer === 'X') || (!gameState.isXNext && myPlayer === 'O')
+
+        return (
+          <TicTacToeMultiplayer
+            {...gameState}
+            isMe={isMe}
+            isMyTurn={isMyTurn}
+            myPlayer={myPlayer}
+            onMove={(index) => {
+              const newState = handleGameMove(gameState, index, currentUserId)
+              if (newState) {
+                onUpdateMessage(messageId, { content: GAME_PREFIX + JSON.stringify(newState) })
+              }
+            }}
+            onReset={() => {
+              const newState = createInitialGameState(gameState.players.X, gameState.players.O)
+              onUpdateMessage(messageId, { content: GAME_PREFIX + JSON.stringify(newState) })
+            }}
+          />
+        )
+      } catch (e) {
+        return <div className="text-xs text-rose-500 italic">Failed to load game data</div>
+      }
+    }
+
     return (
       <div className="break-words leading-relaxed text-sm">
         {formatRichText(content)}
@@ -278,10 +309,11 @@ export default function MessageList({
           No messages yet. Be the first to say hi!
         </div>
       ) : (
-        messages.map((msg) => {
-          const isMe = msg.user_id === currentUserId
-          const isViewOnce = msg.is_view_once
-          const isViewed = msg.is_viewed
+          messages.map((msg) => {
+            const isMe = msg.user_id === currentUserId
+            const isViewOnce = msg.is_view_once
+            const isViewed = msg.is_viewed
+            const isGame = msg.content?.startsWith(GAME_PREFIX)
 
           return (
             <div
@@ -300,18 +332,23 @@ export default function MessageList({
                 <div className={clsx('flex items-center gap-2 flex-wrap', isMe ? 'flex-row-reverse' : 'flex-row')}>
                   <div
                     className={clsx(
-                      'rounded-2xl px-3 py-1.5 text-sm relative transition-all duration-200 shadow-sm break-words whitespace-pre-wrap overflow-hidden min-w-0 flex-shrink message-content',
-                      isMe
-                        ? (isViewOnce
-                          ? (isViewed ? 'bg-neutral-100 dark:bg-neutral-900 text-neutral-400 border border-neutral-200 dark:border-neutral-800 rounded-tr-none' : 'bg-amber-600 text-white rounded-tr-none ring-2 ring-amber-400/30')
-                          : 'bg-blue-600 text-white rounded-tr-none shadow-md shadow-blue-500/20')
-                        : (isViewOnce
-                          ? (isViewed
-                            ? 'bg-neutral-50 dark:bg-neutral-900/50 text-neutral-400 border border-neutral-200 dark:border-neutral-800 rounded-tl-none italic'
-                            : 'bg-amber-100 dark:bg-amber-900/30 border-2 border-amber-400/50 text-amber-900 dark:text-amber-100 rounded-tl-none cursor-pointer hover:scale-[1.02] active:scale-[0.98]')
-                          : 'bg-white dark:bg-neutral-800 text-slate-800 dark:text-slate-100 rounded-tl-none border border-slate-200 dark:border-slate-700 backdrop-blur-sm')
+                      'text-sm relative transition-all duration-200 min-w-0 flex-shrink message-content',
+                      isGame 
+                        ? 'p-0 bg-transparent border-none shadow-none overflow-visible w-full'
+                        : clsx(
+                            'rounded-2xl px-3 py-1.5 shadow-sm break-words whitespace-pre-wrap overflow-hidden',
+                            isMe
+                              ? (isViewOnce
+                                ? (isViewed ? 'bg-neutral-100 dark:bg-neutral-900 text-neutral-400 border border-neutral-200 dark:border-neutral-800 rounded-tr-none' : 'bg-amber-600 text-white rounded-tr-none ring-2 ring-amber-400/30')
+                                : 'bg-blue-600 text-white rounded-tr-none shadow-md shadow-blue-500/20')
+                              : (isViewOnce
+                                ? (isViewed
+                                  ? 'bg-neutral-50 dark:bg-neutral-900/50 text-neutral-400 border border-neutral-200 dark:border-neutral-800 rounded-tl-none italic'
+                                  : 'bg-amber-100 dark:bg-amber-900/30 border-2 border-amber-400/50 text-amber-900 dark:text-amber-100 rounded-tl-none cursor-pointer hover:scale-[1.02] active:scale-[0.98]')
+                                : 'bg-white dark:bg-neutral-800 text-slate-800 dark:text-slate-100 rounded-tl-none border border-slate-200 dark:border-slate-700 backdrop-blur-sm')
+                          )
                     )}
-                    onClick={() => isViewOnce && !isMe && !isViewed && setViewingMessage(msg)}
+                    onClick={() => !isGame && isViewOnce && !isMe && !isViewed && setViewingMessage(msg)}
                   >
                     {/* Replied Message Preview */}
                     {msg.replied_message && (

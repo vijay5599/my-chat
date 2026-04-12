@@ -12,6 +12,8 @@ import ScheduleMessageModal from './ScheduleMessageModal'
 import { Image as ImageIcon } from 'lucide-react'
 import clsx from 'clsx'
 import { CelebrationMode } from '@/lib/hooks/usePresence'
+import { GAME_PREFIX, createInitialGameState } from '@/lib/games'
+import { Gamepad2 } from 'lucide-react'
 
 export default function MessageInput({
   onSendMessage,
@@ -472,6 +474,25 @@ export default function MessageInput({
                     isActive={false}
                     onClick={() => { setShowCelebrationMenu(!showCelebrationMenu); setShowMoreActions(false); }}
                   />
+
+                  {/* Tic Tac Toe Challenge */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const otherUser = members.find(m => m.id !== currentUserId) || members[0]
+                      const me = members.find(m => m.id === currentUserId) || { id: currentUserId, username: 'You' }
+                      const initialState = createInitialGameState(
+                        { id: me.id, username: (me as any).username || 'Player 1' },
+                        { id: otherUser.id, username: (otherUser as any).username || 'Player 2' }
+                      )
+                      onSendMessage(GAME_PREFIX + JSON.stringify(initialState))
+                      setShowMoreActions(false)
+                    }}
+                    className="w-10 h-10 flex items-center justify-center bg-neutral-50 dark:bg-neutral-800 text-neutral-500 hover:text-indigo-500 rounded-xl"
+                    title="Challenge to Tic Tac Toe"
+                  >
+                    <Gamepad2 size={18} />
+                  </button>
                 </div>
 
               </div>
