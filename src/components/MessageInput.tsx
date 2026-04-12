@@ -417,7 +417,7 @@ export default function MessageInput({
 
                 {/* Unified Actions Sub-bar (Mobile & Desktop) */}
                 <div className={clsx(
-                  "absolute bottom-full left-0 mb-3 flex gap-2 p-1.5 bg-white dark:bg-neutral-900 border dark:border-neutral-800 rounded-2xl shadow-xl transition-all duration-300 z-[60]",
+                  "absolute bottom-full left-0 sm:left-auto sm:right-0 mb-3 flex flex-wrap sm:flex-nowrap gap-2 p-2 bg-white dark:bg-neutral-900 border dark:border-neutral-800 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] transition-all duration-300 z-[60] w-[280px] sm:w-auto",
                   showMoreActions ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-4 scale-95 pointer-events-none"
                 )}>
                   <button
