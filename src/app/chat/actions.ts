@@ -630,3 +630,28 @@ export async function askAuraAssistant(message: string) {
     return { error: 'Aura is momentarily disconnected.' }
   }
 }
+
+export async function editMessage(messageId: string, content: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) throw new Error('Not authenticated')
+
+  const { error } = await supabase
+    .from('messages')
+    .update({ 
+      content, 
+      is_edited: true 
+    })
+    .eq('id', messageId)
+    .eq('user_id', user.id) // Only allow editing own messages
+
+  if (error) {
+    console.error('Edit Message Error:', error)
+    return { success: false, error: error.message }
+  }
+
+  // Revalidate to ensure server state is fresh
+  revalidatePath('/chat')
+  return { success: true }
+}

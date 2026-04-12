@@ -6,7 +6,7 @@ import { Message, Profile, MessageReaction } from '@/types'
 import { RealtimeChannel } from '@supabase/supabase-js'
 import MessageList from './MessageList'
 import MessageInput from './MessageInput'
-import { toggleReaction, scheduleMessage, processAuraMention, askAuraAssistant } from '@/app/chat/actions'
+import { toggleReaction, scheduleMessage, processAuraMention, askAuraAssistant, editMessage } from '@/app/chat/actions'
 import { AURA_BOT_ID } from '@/lib/gemini'
 import { usePresence, CelebrationMode } from '@/lib/hooks/usePresence'
 import { TypingAnimation } from './TypingAnimation'
@@ -749,6 +749,7 @@ export default function ChatBox({
           currentUserId={currentUserId}
           onDeleteMessage={handleDeleteMessage}
           onUpdateMessage={handleUpdateMessage}
+          onEditMessage={editMessage}
           onReply={setReplyingTo}
           onToggleReaction={handleToggleReaction}
           members={members}

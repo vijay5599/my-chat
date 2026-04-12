@@ -6,7 +6,7 @@ import { Message, Profile, MessageReaction } from '@/types'
 import { format } from 'date-fns'
 import clsx from 'clsx'
 import { Avatar } from './Avatar'
-import { Mic, Trash2, Eye, EyeOff, X, AlertTriangle, Reply, Smile, PlusCircle } from 'lucide-react'
+import { Mic, Trash2, Eye, EyeOff, X, AlertTriangle, Reply, Smile, PlusCircle, Pencil, Check } from 'lucide-react'
 import EmojiPicker from './EmojiPicker'
 import { CelebrationMode } from '@/lib/hooks/usePresence'
 
@@ -24,6 +24,7 @@ export default function MessageList({
   onUpdateMessage,
   onReply,
   onToggleReaction,
+  onEditMessage,
   members,
   onlineUsers
 }: {
@@ -33,6 +34,7 @@ export default function MessageList({
   onUpdateMessage: (id: string, updates: Partial<Message>) => void,
   onReply: (message: Message) => void,
   onToggleReaction: (messageId: string, emoji: string) => void,
+  onEditMessage?: (id: string, content: string) => Promise<{ success?: boolean, error?: string }>,
   members: Profile[],
   onlineUsers: string[]
 }) {
@@ -41,13 +43,16 @@ export default function MessageList({
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null) // messageId
   const [showFullPicker, setShowFullPicker] = useState<string | null>(null) // messageId
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editContent, setEditContent] = useState('')
+  const [isUpdating, setIsUpdating] = useState(false)
   const isInitialRender = useRef(true)
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (messages.length > 0) {
-      bottomRef.current?.scrollIntoView({ 
-        behavior: isInitialRender.current ? 'auto' : 'smooth' 
+      bottomRef.current?.scrollIntoView({
+        behavior: isInitialRender.current ? 'auto' : 'smooth'
       })
     }
   }, [messages])
@@ -55,7 +60,7 @@ export default function MessageList({
   // Stability Fix: Handle dynamic height changes (images/avatars loading)
   useEffect(() => {
     if (!containerRef.current) return;
-    
+
     const resizeObserver = new ResizeObserver(() => {
       if (isInitialRender.current) {
         bottomRef.current?.scrollIntoView({ behavior: 'auto' })
@@ -96,15 +101,15 @@ export default function MessageList({
   }
 
 
-  const renderMessageContent = (content: string, isMe: boolean) => {
+  const renderMessageContent = (content: string, isMe: boolean, messageId: string) => {
     if (!content) return null
 
     const isMediaUrl = (url: string) => {
-      return url.startsWith('blob:') || 
+      return url.startsWith('blob:') ||
         url.startsWith('data:image/') || // Hugging Face / Base64
         url.match(/\.(gif|jpe?g|png|webp|svg)(\?.*)?$/i) ||
         url.includes('supabase.co/storage/v1/object/public/') ||
-        url.includes('oaidalleapiprodscus.blob.core.windows.net') || 
+        url.includes('oaidalleapiprodscus.blob.core.windows.net') ||
         url.includes('image.pollinations.ai') ||
         url.includes('giphy.com/media/') ||
         url.includes('media.giphy.com/') ||
@@ -122,15 +127,15 @@ export default function MessageList({
           onClick={() => setSelectedImage(content)}
           className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black/20 max-w-[240px] sm:max-w-[280px] group relative cursor-zoom-in"
         >
-          <img 
-            src={content} 
-            alt="Media" 
-            className="w-full h-auto block opacity-90 group-hover:opacity-100 transition-opacity" 
+          <img
+            src={content}
+            alt="Media"
+            className="w-full h-auto block opacity-90 group-hover:opacity-100 transition-opacity"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-             <div className="p-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-white translate-y-4 group-hover:translate-y-0 transition-all">
-                <Smile size={16} />
-             </div>
+            <div className="p-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-white translate-y-4 group-hover:translate-y-0 transition-all">
+              <Smile size={16} />
+            </div>
           </div>
         </motion.div>
       )
@@ -155,7 +160,7 @@ export default function MessageList({
     const formatRichText = (text: string) => {
       // 1. Handle Mentions (@username)
       const mentionRegex = /@(\w+)/g
-      
+
       // 2. Simple Markdown regex components
       let html = text
         .replace(/&/g, '&amp;')
@@ -174,7 +179,7 @@ export default function MessageList({
       // 3. Process emojis and mentions into React elements
       // First, we split by emojis to wrap them in 'living-emoji' class
       const emojiRegex = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g;
-      
+
       const processSegment = (segment: string) => {
         const parts = segment.split(mentionRegex);
         return parts.map((part, i) => {
@@ -192,11 +197,11 @@ export default function MessageList({
               </span>
             );
           }
-          
+
           // Split by emojis for living emoji support
           const subParts = part.split(emojiRegex);
-          return subParts.map((subPart, subIdx) => 
-            emojiRegex.test(subPart) 
+          return subParts.map((subPart, subIdx) =>
+            emojiRegex.test(subPart)
               ? <span key={subIdx} className="living-emoji inline-block align-middle mx-0.5">{subPart}</span>
               : <span key={subIdx} dangerouslySetInnerHTML={{ __html: subPart }} />
           );
@@ -206,6 +211,42 @@ export default function MessageList({
       return <div className="markdown-body">{processSegment(html)}</div>;
     };
 
+    if (editingId === messageId) {
+      return (
+        <div className="flex flex-col gap-2 min-w-[200px]">
+          <textarea
+            autoFocus
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            className="w-full bg-white/10 dark:bg-black/20 border border-white/20 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 ring-blue-500/50 resize-none min-h-[60px]"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                handleSaveEdit(messageId)
+              }
+              if (e.key === 'Escape') setEditingId(null)
+            }}
+          />
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => setEditingId(null)}
+              className="px-2 py-1 text-xs text-neutral-400 hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => handleSaveEdit(messageId)}
+              disabled={isUpdating}
+              className="px-3 py-1 bg-blue-600 text-white rounded-md text-xs font-bold hover:bg-blue-500 disabled:opacity-50 transition-all flex items-center gap-1.5"
+            >
+              {isUpdating ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Check size={12} />}
+              Save
+            </button>
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div className="break-words leading-relaxed text-sm">
         {formatRichText(content)}
@@ -213,8 +254,22 @@ export default function MessageList({
     )
   }
 
+  const handleSaveEdit = async (id: string) => {
+    if (!editContent.trim() || !onEditMessage) return
+    setIsUpdating(true)
+    try {
+      const result = await onEditMessage(id, editContent)
+      if (result.success) {
+        onUpdateMessage(id, { content: editContent, is_edited: true })
+        setEditingId(null)
+      }
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
   return (
-    <div 
+    <div
       ref={containerRef}
       className="flex-1 min-w-[300px] overflow-y-auto px-2 py-3 space-y-1.5 relative text-neutral-800 dark:text-neutral-200"
     >
@@ -335,7 +390,7 @@ export default function MessageList({
                             />
                           </div>
                         )}
-                        {msg.content && renderMessageContent(msg.content, isMe)}
+                        {msg.content && renderMessageContent(msg.content, isMe, msg.id)}
                       </>
                     )}
 
@@ -391,6 +446,9 @@ export default function MessageList({
                           : (isViewOnce ? (isViewed ? 'text-neutral-400' : 'text-amber-700 dark:text-amber-300') : 'text-neutral-500')
                       )}
                     >
+                      {msg.is_edited && (
+                        <span className="text-[10px] italic opacity-60 text-green-100">Edited</span>
+                      )}
                       {isViewOnce && <EyeOff size={10} />}
                       {format(new Date(msg.created_at), 'h:mm a')}
                     </div>
@@ -481,6 +539,19 @@ export default function MessageList({
                         )}
                       </AnimatePresence>
                     </div>
+                    {isMe && !isViewOnce && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setEditingId(msg.id)
+                          setEditContent(msg.content)
+                        }}
+                        className="p-1.5 text-blue-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full transition-all border border-slate-200 dark:border-slate-700 bg-white dark:bg-neutral-900 shadow-sm hover:scale-110 active:scale-95"
+                        title="Edit message"
+                      >
+                        <Pencil size={15} />
+                      </button>
+                    )}
 
                     {isMe && !isViewed && (
                       <button
@@ -589,7 +660,7 @@ export default function MessageList({
             >
               <X size={24} />
             </motion.button>
-            
+
             <motion.div
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}

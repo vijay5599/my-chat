@@ -42,6 +42,7 @@ export interface Message {
   reply_to_id?: string
   replied_message?: Partial<Message> & { profiles?: Profile }
   created_at: string
+  is_edited?: boolean
   profiles?: Profile
   reactions?: MessageReaction[]
 }
